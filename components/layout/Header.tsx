@@ -94,7 +94,7 @@ export const Header: React.FC = () => {
               <GraduationCap className="h-6 w-6" />
             </span>
             <span className="text-xl font-black text-surface-900 tracking-tight">
-              Study<span className="text-brand-500">Setu</span>
+              Aspira<span className="text-brand-500">v</span>
             </span>
           </Link>
 

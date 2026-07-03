@@ -37,7 +37,7 @@ export const Footer: React.FC = () => {
                 <GraduationCap className="h-5 w-5" />
               </span>
               <span className="text-lg font-black text-surface-900 tracking-tight">
-                Study<span className="text-brand-500">Setu</span>
+                Aspira<span className="text-brand-500">v</span>
               </span>
             </Link>
             <p className="text-xs md:text-sm text-surface-500 font-medium leading-relaxed">
