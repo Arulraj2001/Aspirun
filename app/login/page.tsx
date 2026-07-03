@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { supabase } from '@/lib/supabase/client';
-import { GraduationCap, ArrowRight } from 'lucide-react';
+import { GraduationCap, ArrowRight, ArrowLeft } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -251,11 +251,18 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <div className="border-t border-surface-150 mt-6 pt-4 text-center text-xs md:text-sm font-semibold text-surface-550">
-          New to StudySetu?{' '}
-          <Link href="/register" className="text-brand-600 font-black hover:underline">
-            Register Free Account
-          </Link>
+        <div className="border-t border-surface-150 mt-6 pt-4 text-center flex flex-col gap-3">
+          <p className="text-xs md:text-sm font-semibold text-surface-550">
+            New to StudySetu?{' '}
+            <Link href="/register" className="text-brand-600 font-black hover:underline">
+              Register Free Account
+            </Link>
+          </p>
+          <div className="pt-3 border-t border-surface-100">
+            <Link href="/" className="inline-flex items-center gap-1 text-xs font-black text-brand-650 hover:underline">
+              <ArrowLeft className="h-3.5 w-3.5" /> Return to Home
+            </Link>
+          </div>
         </div>
       </Card>
     </Container>
