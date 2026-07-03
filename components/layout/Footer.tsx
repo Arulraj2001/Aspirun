@@ -28,9 +28,9 @@ export const Footer: React.FC = () => {
   return (
     <footer className="w-full bg-white border-t border-surface-200 mt-auto py-8 md:py-12">
       <Container size="xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 pb-6 border-b border-surface-100">
           
-          {/* Logo & Info */}
+          {/* Column 1: Logo & Info */}
           <div className="flex flex-col items-start max-w-sm">
             <Link href="/" className="flex items-center gap-2 mb-3">
               <span className="p-1.5 bg-brand-500 rounded-lg text-white">
@@ -40,22 +40,43 @@ export const Footer: React.FC = () => {
                 Aspira<span className="text-brand-500">v</span>
               </span>
             </Link>
-            <p className="text-xs md:text-sm text-surface-500 font-medium leading-relaxed">
+            <p className="text-xs md:text-sm text-surface-500 font-semibold leading-relaxed">
               India&apos;s leading exam-wise daily study planner and doubt-clearing ecosystem for government exam aspirants. Master your goals day by day.
             </p>
           </div>
 
-          {/* Nav Links */}
-          <div className="flex flex-wrap gap-x-6 gap-y-3">
-            {links.map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                className="text-xs md:text-sm text-surface-550 font-bold hover:text-brand-650 transition-colors"
-              >
-                {link.label}
-              </Link>
-            ))}
+          {/* Column 2: Platform Links */}
+          <div className="flex flex-col gap-2">
+            <h4 className="text-xs font-black text-surface-800 uppercase tracking-wider mb-2">Company</h4>
+            <Link href="/about" className="text-xs md:text-sm text-surface-550 font-bold hover:text-brand-650 transition-colors w-max">
+              About Us
+            </Link>
+            <Link href="/contact" className="text-xs md:text-sm text-surface-550 font-bold hover:text-brand-650 transition-colors w-max">
+              Contact Support
+            </Link>
+            <Link href="/disclaimer" className="text-xs md:text-sm text-surface-550 font-bold hover:text-brand-650 transition-colors w-max">
+              Legal Disclaimer
+            </Link>
+          </div>
+
+          {/* Column 3: Trust & Policies */}
+          <div className="flex flex-col gap-2">
+            <h4 className="text-xs font-black text-surface-800 uppercase tracking-wider mb-2">Policies & Safety</h4>
+            <Link href="/privacy-policy" className="text-xs md:text-sm text-surface-550 font-bold hover:text-brand-650 transition-colors w-max">
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="text-xs md:text-sm text-surface-550 font-bold hover:text-brand-650 transition-colors w-max">
+              Terms of Service
+            </Link>
+            <Link href="/community-guidelines" className="text-xs md:text-sm text-surface-550 font-bold hover:text-brand-650 transition-colors w-max">
+              Community Guidelines
+            </Link>
+            <Link href="/payment-policy" className="text-xs md:text-sm text-surface-550 font-bold hover:text-brand-650 transition-colors w-max">
+              Payment Policy
+            </Link>
+            <Link href="/refund-policy" className="text-xs md:text-sm text-surface-550 font-bold hover:text-brand-650 transition-colors w-max">
+              Refund Policy
+            </Link>
           </div>
 
         </div>
