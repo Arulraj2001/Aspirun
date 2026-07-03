@@ -84,7 +84,7 @@ export default function CommunityHomepage() {
         <div>
           <h4 className="text-xs md:text-sm font-extrabold text-brand-900">Safety & Moderation Warning notice</h4>
           <p className="text-xs text-brand-700 leading-relaxed font-semibold mt-1">
-            StudySetu is committed to keeping comments exam-focused. Links, contacts exchange (WhatsApp, Telegram handles, phone numbers), paid materials selling, or misbehavior will trigger an immediate permanent mute or hardware profile ban.
+            Aspirav is committed to keeping comments exam-focused. Links, contacts exchange (WhatsApp, Telegram handles, phone numbers), paid materials selling, or misbehavior will trigger an immediate permanent mute or hardware profile ban.
           </p>
         </div>
       </div>

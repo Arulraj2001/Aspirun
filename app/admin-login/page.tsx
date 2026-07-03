@@ -76,7 +76,7 @@ export default function AdminLoginPage() {
           setLoading(false);
           
           // Match SHA-256 of AdminSecureSetu2026!
-          if (email === 'admin@studysetu.in' && hashHex === '649b87a0a26fc54edfdf264e388946c1f7c2ddf0b67def6e9c5682d785bbd710') {
+          if (email === 'admin@aspirav.in' && hashHex === '649b87a0a26fc54edfdf264e388946c1f7c2ddf0b67def6e9c5682d785bbd710') {
             localStorage.setItem('simulated_role', 'admin');
             router.push('/admin/dashboard');
           } else {
@@ -99,7 +99,7 @@ export default function AdminLoginPage() {
             <ShieldCheck className="h-8 w-8" />
           </span>
           <h1 className="text-xl md:text-2xl font-black text-surface-900 tracking-tight">
-            StudySetu Control Panel
+            Aspirav Control Panel
           </h1>
           <p className="text-xs md:text-sm text-surface-450 font-bold mt-1">
             Authenticate to access dynamic sitemaps and moderation portals.
@@ -120,7 +120,7 @@ export default function AdminLoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@studysetu.in"
+              placeholder="admin@aspirav.in"
               required
             />
 

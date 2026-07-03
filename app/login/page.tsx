@@ -73,7 +73,7 @@ export default function LoginPage() {
       setTimeout(() => {
         setLoading(false);
         
-        if (email.toLowerCase().includes('admin') || email === 'admin@studysetu.in') {
+        if (email.toLowerCase().includes('admin') || email === 'admin@aspirav.in') {
           setErrorMsg('Admin logins must be performed through the dedicated Admin portal.');
           return;
         }
@@ -86,7 +86,7 @@ export default function LoginPage() {
           const mockProfile = {
             fullName: 'Siddharth Mishra',
             username: 'siddharth_99',
-            email: email || 'aspirant@studysetu.in',
+            email: email || 'aspirant@aspirav.in',
             phone: '9876543210',
             city: 'New Delhi',
             qualification: 'B.Tech Graduate',
@@ -137,7 +137,7 @@ export default function LoginPage() {
           const mockProfile = {
             fullName: 'Siddharth Mishra',
             username: 'siddharth_99',
-            email: 'siddharth.google@studysetu.in',
+            email: 'siddharth.google@aspirav.in',
             phone: '9876543210',
             city: 'New Delhi',
             qualification: 'B.Tech Graduate',
@@ -161,7 +161,7 @@ export default function LoginPage() {
           <GraduationCap className="h-8 w-8" />
         </span>
         <h1 className="text-xl md:text-2xl font-black text-surface-900 tracking-tight text-center">
-          Sign In to StudySetu
+          Sign In to Aspirav
         </h1>
         <p className="text-xs md:text-sm text-surface-500 font-semibold text-center mt-1">
           Access your daily targets, mock tests, and peer doubts board.
@@ -219,7 +219,7 @@ export default function LoginPage() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="aspirant@studysetu.in"
+            placeholder="aspirant@aspirav.in"
             required
           />
 
@@ -253,7 +253,7 @@ export default function LoginPage() {
 
         <div className="border-t border-surface-150 mt-6 pt-4 text-center flex flex-col gap-3">
           <p className="text-xs md:text-sm font-semibold text-surface-550">
-            New to StudySetu?{' '}
+            New to Aspirav?{' '}
             <Link href="/register" className="text-brand-600 font-black hover:underline">
               Register Free Account
             </Link>

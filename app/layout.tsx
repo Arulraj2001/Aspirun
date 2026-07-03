@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "StudySetu - Exam-wise Daily Study Planner",
+  title: "Aspirav - Exam-wise Daily Study Planner",
   description: "Daily target-based study planner and secure community for UPSC, SSC, Bank, and Railway aspirants.",
 };
 

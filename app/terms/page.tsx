@@ -16,7 +16,7 @@ export default function TermsOfServicePage() {
         <div>
           <h3 className="text-sm md:text-base font-black text-surface-850 mb-2">1. Student Registration</h3>
           <p>
-            StudySetu accounts are single-user only. Registering multiple accounts to spam mock quizzes or share access links is strictly prohibited.
+            Aspirav accounts are single-user only. Registering multiple accounts to spam mock quizzes or share access links is strictly prohibited.
           </p>
         </div>
 
@@ -37,12 +37,12 @@ export default function TermsOfServicePage() {
         <div>
           <h3 className="text-sm md:text-base font-black text-surface-850 mb-2">4. Disclaimers</h3>
           <p>
-            StudySetu is an independent educational tool. We do NOT represent nor hold official affiliations with govt recruitment boards (UPSC, SSC, RRB). Syllabus timelines are targets and depend on student execution.
+            Aspirav is an independent educational tool. We do NOT represent nor hold official affiliations with govt recruitment boards (UPSC, SSC, RRB). Syllabus timelines are targets and depend on student execution.
           </p>
         </div>
 
         <div className="pt-4 border-t text-[11px] text-surface-450">
-          By utilizing StudySetu daily checklists, you agree to these terms of service rules.
+          By utilizing Aspirav daily checklists, you agree to these terms of service rules.
         </div>
       </Card>
     </Container>

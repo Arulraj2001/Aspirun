@@ -140,7 +140,7 @@ export default function ReportsQueuePage() {
 
   const handleBanUser = (authorName: string) => {
     localStorage.setItem('community_status', 'banned');
-    alert(`User "${authorName}" has been PERMANENTLY BANNED from StudySetu.`);
+    alert(`User "${authorName}" has been PERMANENTLY BANNED from Aspirav.`);
   };
 
   const handleLockThread = (item: ReportItem) => {

@@ -16,7 +16,7 @@ export default function PaymentPolicyPage() {
         <div>
           <h3 className="text-sm md:text-base font-black text-surface-850 mb-2">1. Manual UPI Reference Check</h3>
           <p>
-            StudySetu supports manual payment locks utilizing merchant QR codes. Aspirants submit proof of payments by entering the unique 12-digit transaction ID (UTR number) and uploading screenshots.
+            Aspirav supports manual payment locks utilizing merchant QR codes. Aspirants submit proof of payments by entering the unique 12-digit transaction ID (UTR number) and uploading screenshots.
           </p>
         </div>
 

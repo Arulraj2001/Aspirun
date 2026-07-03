@@ -457,7 +457,7 @@ export const mockCommunityPosts: CommunityPost[] = [
     title: 'Official Notification: SSC CGL 2026 Exam Dates Out!',
     content: 'The Staff Selection Commission has released the official schedule for Combined Graduate Level Examination (Tier-I) 2026. The exams will commence from September 15, 2026 and continue until October 10, 2026. Make sure your syllabus is completed by August. All the best!',
     category: 'Official Announcements',
-    authorName: 'StudySetu Team',
+    authorName: 'Aspirav Team',
     authorRole: 'Admin',
     date: '2026-07-01T12:00:00Z',
     upvotes: 142,
@@ -483,7 +483,7 @@ export const mockCommunityPosts: CommunityPost[] = [
   {
     id: 'post-4',
     title: 'Need a study partner for UPSC CSE 2027 daily targets',
-    content: 'Hi, looking for a serious study partner. We can match daily study targets based on the StudySetu Laxmikanth Polity plan, discuss doubts at 9 PM, and solve quizzes together. Drop a comment if interested.',
+    content: 'Hi, looking for a serious study partner. We can match daily study targets based on the Aspirav Laxmikanth Polity plan, discuss doubts at 9 PM, and solve quizzes together. Drop a comment if interested.',
     category: 'Exam Strategy',
     authorName: 'Sanjay Verma',
     authorRole: 'Student',

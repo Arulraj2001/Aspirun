@@ -16,7 +16,7 @@ export default function DisclaimerPage() {
         <div>
           <h3 className="text-sm md:text-base font-black text-surface-850 mb-2">No Government Affiliation</h3>
           <p>
-            StudySetu is an independent private educational portal. We are NOT associated, affiliated, endorsed by, or in any way officially connected with the Union Public Service Commission (UPSC), Staff Selection Commission (SSC), Railway Recruitment Board (RRB), Institute of Banking Personnel Selection (IBPS), or any state police recruitment board or state government.
+            Aspirav is an independent private educational portal. We are NOT associated, affiliated, endorsed by, or in any way officially connected with the Union Public Service Commission (UPSC), Staff Selection Commission (SSC), Railway Recruitment Board (RRB), Institute of Banking Personnel Selection (IBPS), or any state police recruitment board or state government.
           </p>
         </div>
 

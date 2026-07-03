@@ -13,7 +13,7 @@ export default function ContactPage() {
     <Container size="md" className="py-8 md:py-16 space-y-8">
       <div className="text-center space-y-4">
         <h1 className="text-3xl md:text-5xl font-black text-surface-900 tracking-tight">
-          Contact <span className="text-brand-500">StudySetu</span>
+          Contact <span className="text-brand-500">Aspirav</span>
         </h1>
         <p className="text-sm md:text-base text-surface-550 max-w-xl mx-auto font-semibold">
           Have doubts about syllabus roadmaps, transaction approval, or general queries? Speak to us.
@@ -28,7 +28,7 @@ export default function ContactPage() {
           </div>
           <h3 className="text-xs md:text-sm font-black text-surface-850">Email Support</h3>
           <p className="text-[11px] text-surface-500 font-semibold leading-relaxed">
-            support@studysetu.co.in<br />
+            support@aspirav.co.in<br />
             (Average response: 2 hours)
           </p>
         </Card>

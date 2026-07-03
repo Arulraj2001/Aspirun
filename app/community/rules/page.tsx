@@ -25,14 +25,14 @@ export default function CommunityRulesPage() {
             </span>
             <div>
               <h1 className="text-lg md:text-2xl font-black text-surface-900 leading-snug">
-                StudySetu Community Rules
+                Aspirav Community Rules
               </h1>
               <p className="text-xs text-surface-450 font-bold uppercase mt-0.5">Strict safety and moderation code</p>
             </div>
           </div>
 
           <p className="text-xs md:text-sm text-surface-550 font-semibold leading-relaxed">
-            StudySetu runs an admin-moderated serious peer environment. We enforce strict protocols. Review our 7 core guidelines below before asking doubts or posting solution replies.
+            Aspirav runs an admin-moderated serious peer environment. We enforce strict protocols. Review our 7 core guidelines below before asking doubts or posting solution replies.
           </p>
 
           {/* Rules lists */}
@@ -71,7 +71,7 @@ export default function CommunityRulesPage() {
               {
                 id: 7,
                 title: 'Admin/Moderator Decision is Final',
-                desc: 'Announcements, thread lockouts, post removals, or user suspension actions carried out by StudySetu safety teams cannot be disputed.'
+                desc: 'Announcements, thread lockouts, post removals, or user suspension actions carried out by Aspirav safety teams cannot be disputed.'
               }
             ].map((rule) => (
               <div key={rule.id} className="p-4 bg-surface-50 border border-surface-150 rounded-2xl flex gap-3">

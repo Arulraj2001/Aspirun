@@ -30,7 +30,7 @@ export default function StudentProfile() {
   const [profile, setProfile] = useState<UserProfile>({
     fullName: 'Siddharth Mishra',
     username: 'siddharth_99',
-    email: 'aspirant@studysetu.in',
+    email: 'aspirant@aspirav.in',
     phone: '9876543210',
     city: 'New Delhi',
     qualification: 'B.Tech Graduate',

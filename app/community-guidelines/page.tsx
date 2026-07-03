@@ -15,7 +15,7 @@ export default function CommunityGuidelinesPage() {
 
       <div className="bg-success-50 border border-success-150 p-4 rounded-2xl flex items-start gap-3 text-xs md:text-sm font-semibold text-success-850">
         <ShieldCheck className="h-5 w-5 text-success-650 shrink-0 mt-0.5" />
-        <span>StudySetu maintains strict, zero-tolerance anti-spam policies to protect student focus. Learn how we keep this forum safe.</span>
+        <span>Aspirav maintains strict, zero-tolerance anti-spam policies to protect student focus. Learn how we keep this forum safe.</span>
       </div>
 
       <div className="grid grid-cols-1 gap-6">

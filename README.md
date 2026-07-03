@@ -1,6 +1,6 @@
-# StudySetu
+# Aspirav
 
-StudySetu is a premium, mobile-first, and production-ready exam-wise daily study planner and secure community platform built for Indian government exam aspirants (UPSC, SSC, RRB, IBPS).
+Aspirav is a premium, mobile-first, and production-ready exam-wise daily study planner and secure community platform built for Indian government exam aspirants (UPSC, SSC, RRB, IBPS).
 
 ## Tech Stack
 - **Framework**: Next.js 16 (App Router)
@@ -78,7 +78,7 @@ npm run build
 
 ## Vercel Deployment Instructions
 
-To deploy StudySetu to Vercel:
+To deploy Aspirav to Vercel:
 
 1. **Push your code** to GitHub or GitLab.
 2. **Connect to Vercel**: Import the repository in your Vercel Dashboard.

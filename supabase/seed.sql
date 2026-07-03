@@ -1,4 +1,4 @@
--- StudySetu Supabase Seed Script
+-- Aspirav Supabase Seed Script
 -- Phase 3 Integration
 
 -- ==========================================

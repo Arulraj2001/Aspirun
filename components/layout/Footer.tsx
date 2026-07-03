@@ -63,7 +63,7 @@ export const Footer: React.FC = () => {
         {/* Bottom divider and copyright */}
         <div className="border-t border-surface-100 mt-8 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-surface-450 font-bold text-center sm:text-left">
-            &copy; {currentYear} StudySetu. All rights reserved. Made for Indian government exam aspirants.
+            &copy; {currentYear} Aspirav. All rights reserved. Made for Indian government exam aspirants.
           </p>
           <div className="flex items-center gap-4">
             <span className="text-[10px] text-success-600 font-extrabold bg-success-50 border border-success-100 px-2 py-0.5 rounded-full">

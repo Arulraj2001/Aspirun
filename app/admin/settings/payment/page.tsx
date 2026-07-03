@@ -23,8 +23,8 @@ interface PaymentSettings {
 export default function AdminPaymentSettingsPage() {
   const [settings, setSettings] = useState<PaymentSettings>({
     payment_mode: 'off',
-    upi_id: 'studysetu@upi',
-    upi_name: 'StudySetu Education Private Limited',
+    upi_id: 'aspirav@upi',
+    upi_name: 'Aspirav Education Private Limited',
     qr_code_image: '',
     payment_instructions: '1. Scan QR code or copy official UPI ID.\n2. Pay the amount shown.\n3. Copy the 12-digit UPI Transaction ID / UTR and paste it here.',
     support_whatsapp: '+91 9876543210',
@@ -117,14 +117,14 @@ export default function AdminPaymentSettingsPage() {
               label="Official Merchant UPI ID"
               value={settings.upi_id}
               onChange={(e) => setSettings({ ...settings, upi_id: e.target.value })}
-              placeholder="e.g. studysetu@upi"
+              placeholder="e.g. aspirav@upi"
               required
             />
             <Input
               label="Official Merchant Display Name"
               value={settings.upi_name}
               onChange={(e) => setSettings({ ...settings, upi_name: e.target.value })}
-              placeholder="e.g. StudySetu Education Private Limited"
+              placeholder="e.g. Aspirav Education Private Limited"
               required
             />
           </div>

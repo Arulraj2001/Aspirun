@@ -30,7 +30,7 @@ export default function RefundPolicyPage() {
         <div>
           <h3 className="text-sm md:text-base font-black text-surface-850 mb-2">3. Dispute Resolution Support</h3>
           <p>
-            For any double payment issues or verification delays, please email support@studysetu.co.in with bank deduction summaries.
+            For any double payment issues or verification delays, please email support@aspirav.co.in with bank deduction summaries.
           </p>
         </div>
 

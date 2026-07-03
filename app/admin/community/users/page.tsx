@@ -26,10 +26,10 @@ interface StudentProfile {
 }
 
 const defaultProfiles: StudentProfile[] = [
-  { id: 'usr-1', username: 'siddharth_mishra', fullName: 'Siddharth Mishra', email: 'siddharth@studysetu.co.in', city: 'Prayagraj', community_status: 'active', targetExam: 'UPSC Civil Services', warningsCount: 0 },
-  { id: 'usr-2', username: 'priya_sharma', fullName: 'Priya Sharma', email: 'priya.sh@studysetu.co.in', city: 'Delhi', community_status: 'active', targetExam: 'SSC CGL', warningsCount: 1 },
-  { id: 'usr-3', username: 'amit_kumar', fullName: 'Amit Kumar', email: 'amit.k@studysetu.co.in', city: 'Patna', community_status: 'muted', targetExam: 'RRB NTPC', warningsCount: 2 },
-  { id: 'usr-4', username: 'rohit_singh', fullName: 'Rohit Singh', email: 'rohit@studysetu.co.in', city: 'Lucknow', community_status: 'banned', targetExam: 'UP SI', warningsCount: 3 }
+  { id: 'usr-1', username: 'siddharth_mishra', fullName: 'Siddharth Mishra', email: 'siddharth@aspirav.co.in', city: 'Prayagraj', community_status: 'active', targetExam: 'UPSC Civil Services', warningsCount: 0 },
+  { id: 'usr-2', username: 'priya_sharma', fullName: 'Priya Sharma', email: 'priya.sh@aspirav.co.in', city: 'Delhi', community_status: 'active', targetExam: 'SSC CGL', warningsCount: 1 },
+  { id: 'usr-3', username: 'amit_kumar', fullName: 'Amit Kumar', email: 'amit.k@aspirav.co.in', city: 'Patna', community_status: 'muted', targetExam: 'RRB NTPC', warningsCount: 2 },
+  { id: 'usr-4', username: 'rohit_singh', fullName: 'Rohit Singh', email: 'rohit@aspirav.co.in', city: 'Lucknow', community_status: 'banned', targetExam: 'UP SI', warningsCount: 3 }
 ];
 
 export default function UserModerationPage() {

@@ -167,7 +167,7 @@ export default function TodayTasksPage() {
         <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs md:text-sm font-semibold text-orange-850">
           <div className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-orange-650 shrink-0" />
-            <span>You are previewing as a Guest. Join StudySetu to track targets permanently.</span>
+            <span>You are previewing as a Guest. Join Aspirav to track targets permanently.</span>
           </div>
           <Link href="/register">
             <Button size="sm" variant="success">Choose Study Plan</Button>

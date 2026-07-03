@@ -1,4 +1,4 @@
--- StudySetu Supabase PostgreSQL Schema Definition
+-- Aspirav Supabase PostgreSQL Schema Definition
 -- Phase 3 Integration
 
 -- Enable UUID extension

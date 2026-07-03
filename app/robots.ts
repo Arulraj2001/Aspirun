@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/admin/', '/student/', '/today'],
     },
-    sitemap: 'https://www.studysetu.co.in/sitemap.xml',
+    sitemap: 'https://www.aspirav.co.in/sitemap.xml',
   };
 }

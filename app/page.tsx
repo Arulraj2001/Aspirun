@@ -528,7 +528,7 @@ export default function Home() {
                 Safe Peer Doubt Discuss Forums
               </h2>
               <p className="text-xs md:text-sm text-surface-550 font-semibold leading-relaxed mb-6">
-                StudySetu has built a zero-tolerance educational board. Aspirants must register and pass safety thresholds to participate. Ask doubts, answer sums, and solve equations with real-time peer groups.
+                Aspirav has built a zero-tolerance educational board. Aspirants must register and pass safety thresholds to participate. Ask doubts, answer sums, and solve equations with real-time peer groups.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link href="/community">
@@ -597,7 +597,7 @@ export default function Home() {
         <Container size="xl">
           <div className="text-center max-w-xl mx-auto mb-12">
             <h2 className="text-xl md:text-3xl font-black text-surface-900 tracking-tight">Built For Consistent Study</h2>
-            <p className="mt-2 text-xs md:text-sm text-surface-500 font-semibold">How StudySetu compares to standard test-series portals.</p>
+            <p className="mt-2 text-xs md:text-sm text-surface-500 font-semibold">How Aspirav compares to standard test-series portals.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

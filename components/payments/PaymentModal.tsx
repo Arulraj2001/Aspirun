@@ -24,8 +24,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   onClose,
   onSubmitSuccess
 }) => {
-  const [upiId, setUpiId] = useState('studysetu@upi');
-  const [upiName, setUpiName] = useState('StudySetu Education Private Limited');
+  const [upiId, setUpiId] = useState('aspirav@upi');
+  const [upiName, setUpiName] = useState('Aspirav Education Private Limited');
   const [qrCode, setQrCode] = useState('');
   const [instructions, setInstructions] = useState('');
   const [supportPhone, setSupportPhone] = useState('+91 9876543210');
@@ -40,8 +40,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     // 1. Load payment settings
     const savedSettings = localStorage.getItem('payment_settings');
     let settings = {
-      upi_id: 'studysetu@upi',
-      upi_name: 'StudySetu Education Private Limited',
+      upi_id: 'aspirav@upi',
+      upi_name: 'Aspirav Education Private Limited',
       qr_code_image: '',
       payment_instructions: '1. Scan QR code or copy official UPI ID.\n2. Pay the amount shown.\n3. Copy the 12-digit UPI Transaction ID / UTR and paste it here.',
       support_whatsapp: '+91 9876543210'
@@ -206,7 +206,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               label="Additional Notes / Email ID"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="e.g. Please approve access fast. My registered email is siddharth@studysetu.co.in"
+              placeholder="e.g. Please approve access fast. My registered email is siddharth@aspirav.co.in"
               rows={2}
             />
 

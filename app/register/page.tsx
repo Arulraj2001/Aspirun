@@ -111,7 +111,7 @@ export default function RegisterPage() {
           <GraduationCap className="h-8 w-8" />
         </span>
         <h1 className="text-xl md:text-2xl font-black text-surface-900 tracking-tight text-center">
-          Join StudySetu Free
+          Join Aspirav Free
         </h1>
         <p className="text-xs md:text-sm text-surface-500 font-semibold text-center mt-1">
           Begin day-by-day organized learning and clear doubt equations.
@@ -151,7 +151,7 @@ export default function RegisterPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="aspirant@studysetu.in"
+              placeholder="aspirant@aspirav.in"
               required
             />
             <Input
