@@ -36,6 +36,7 @@ export default function StudentDashboard() {
   const [recentResults, setRecentResults] = useState<MockResult[]>([]);
   const [followedThreads, setFollowedThreads] = useState<CommunityPost[]>([]);
   const [activeSubscription, setActiveSubscription] = useState<{ name: string; ends_at: string } | null>(null);
+  const [studentName, setStudentName] = useState('Siddharth');
 
   useEffect(() => {
     const isConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL && 
@@ -171,6 +172,44 @@ export default function StudentDashboard() {
       }
     };
     checkSubscription();
+
+    const loadProfileName = async () => {
+      if (isConfigured) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            const { data } = await supabase
+              .from('profiles')
+              .select('full_name')
+              .eq('id', session.user.id)
+              .single();
+            if (data?.full_name) {
+              setStudentName(data.full_name);
+            } else {
+              const googleName = session.user.user_metadata?.full_name || session.user.user_metadata?.name;
+              if (googleName) {
+                setStudentName(googleName);
+              } else {
+                setStudentName(session.user.email?.split('@')[0] || 'Aspirant');
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Failed to load profile name:", err);
+        }
+      } else {
+        const saved = localStorage.getItem('simulated_profile');
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (parsed.fullName) {
+              setStudentName(parsed.fullName);
+            }
+          } catch {}
+        }
+      }
+    };
+    loadProfileName();
   }, []);
 
   const progressPercent = tasksCount.total > 0 ? (tasksCount.completed / tasksCount.total) * 100 : 0;
@@ -200,19 +239,19 @@ export default function StudentDashboard() {
             )}
           </div>
           <h1 className="text-2xl md:text-4xl font-black tracking-tight leading-tight pt-1">
-            Welcome back, Siddharth!
+            Welcome back, {studentName}!
           </h1>
           <p className="text-xs md:text-sm text-brand-100 font-semibold leading-relaxed">
             Your daily target milestones are mapped. Finish today&apos;s tasks checklist to maintain your streak cycle.
           </p>
           <div className="pt-4 flex flex-wrap gap-3">
             <Link href="/student/tasks">
-              <Button size="sm" className="bg-white hover:bg-surface-50 text-brand-900 border-white font-black">
+              <Button size="sm" variant="secondary" className="font-black px-6 shadow">
                 Resume Today&apos;s Tasks
               </Button>
             </Link>
             <Link href="/student/my-plan">
-              <Button size="sm" variant="ghost" className="text-brand-100 hover:text-white font-bold">
+              <Button size="sm" variant="ghost" className="text-white hover:bg-white/10 font-bold border border-white/20 px-6">
                 View Week Roadmaps
               </Button>
             </Link>
