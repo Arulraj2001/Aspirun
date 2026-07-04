@@ -111,6 +111,45 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen">
+      {/* JSON-LD Structured Data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@graph': [
+              {
+                '@type': 'Organization',
+                '@id': 'https://www.aspirav.co.in/#organization',
+                name: 'Aspirav',
+                url: 'https://www.aspirav.co.in',
+                description: "India's leading exam-wise daily study planner and peer doubt-clearing community for UPSC, SSC CGL, RRB NTPC, and IBPS PO aspirants.",
+              },
+              {
+                '@type': 'WebSite',
+                '@id': 'https://www.aspirav.co.in/#website',
+                url: 'https://www.aspirav.co.in',
+                name: 'Aspirav',
+                publisher: { '@id': 'https://www.aspirav.co.in/#organization' },
+                potentialAction: {
+                  '@type': 'SearchAction',
+                  target: 'https://www.aspirav.co.in/materials?q={search_term_string}',
+                  'query-input': 'required name=search_term_string',
+                },
+              },
+              {
+                '@type': 'FAQPage',
+                mainEntity: [
+                  { '@type': 'Question', name: 'Is Aspirav free to use?', acceptedAnswer: { '@type': 'Answer', text: 'Yes! Core features including daily study checklists, current affairs, basic mock tests, and community access are 100% free. Optional Pro subscriptions unlock premium content.' } },
+                  { '@type': 'Question', name: 'Which exams does Aspirav cover?', acceptedAnswer: { '@type': 'Answer', text: 'Aspirav covers UPSC Civil Services (IAS), SSC CGL, RRB NTPC (Railway), and IBPS PO (Bank) with dedicated study plans, mock tests, and resources.' } },
+                  { '@type': 'Question', name: 'How does the daily study plan work?', acceptedAnswer: { '@type': 'Answer', text: 'After selecting your target exam, Aspirav generates a day-by-day study roadmap with specific chapters, practice sets, and revision tasks for each day.' } },
+                ],
+              },
+            ],
+          }),
+        }}
+      />
+
       {/* 1. Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-brand-50 to-white py-16 md:py-24 border-b border-surface-200">
         <Container size="xl" className="relative z-10 flex flex-col items-center text-center">

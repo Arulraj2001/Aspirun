@@ -7,14 +7,26 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // 1. Static Routes
   const staticRoutes = [
     { url: baseUrl, lastModified: new Date(), changeFrequency: 'daily' as const, priority: 1.0 },
-    { url: `${baseUrl}/materials`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.8 },
-    { url: `${baseUrl}/mock-tests`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.8 },
-    { url: `${baseUrl}/community`, lastModified: new Date(), changeFrequency: 'always' as const, priority: 0.7 },
+    { url: `${baseUrl}/study-planner`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.9 },
+    { url: `${baseUrl}/materials`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.9 },
+    { url: `${baseUrl}/mock-tests`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.9 },
+    { url: `${baseUrl}/current-affairs`, lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.9 },
+    { url: `${baseUrl}/daily-quiz`, lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.8 },
     { url: `${baseUrl}/guidance`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.8 },
-    { url: `${baseUrl}/current-affairs`, lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.8 },
-    { url: `${baseUrl}/about`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.5 },
-    { url: `${baseUrl}/contact`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.5 },
+    { url: `${baseUrl}/community`, lastModified: new Date(), changeFrequency: 'always' as const, priority: 0.7 },
+    { url: `${baseUrl}/pricing`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/register`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/login`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.6 },
+    { url: `${baseUrl}/about`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.6 },
+    { url: `${baseUrl}/contact`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.6 },
+    { url: `${baseUrl}/privacy-policy`, lastModified: new Date(), changeFrequency: 'yearly' as const, priority: 0.4 },
+    { url: `${baseUrl}/terms`, lastModified: new Date(), changeFrequency: 'yearly' as const, priority: 0.4 },
+    { url: `${baseUrl}/refund-policy`, lastModified: new Date(), changeFrequency: 'yearly' as const, priority: 0.4 },
+    { url: `${baseUrl}/disclaimer`, lastModified: new Date(), changeFrequency: 'yearly' as const, priority: 0.3 },
+    { url: `${baseUrl}/community-guidelines`, lastModified: new Date(), changeFrequency: 'yearly' as const, priority: 0.3 },
+    { url: `${baseUrl}/payment-policy`, lastModified: new Date(), changeFrequency: 'yearly' as const, priority: 0.3 },
   ];
+
 
   // 2. Dynamic Mock Tests
   const mockTestRoutes = mockMockTests
