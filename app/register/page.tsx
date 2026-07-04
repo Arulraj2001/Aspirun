@@ -51,6 +51,13 @@ export default function RegisterPage() {
 
     if (isConfigured) {
       try {
+        let targetExamUuid: string | null = null;
+        if (targetExam === 'exam-ssc') {
+          targetExamUuid = '433a7ad1-77ad-4560-bf88-a739b8bc7e6a';
+        } else if (targetExam === 'exam-upsc') {
+          targetExamUuid = '123e4567-e89b-12d3-a456-426614174000';
+        }
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -61,7 +68,7 @@ export default function RegisterPage() {
               phone,
               city,
               qualification,
-              target_exam_id: targetExam || null,
+              target_exam_id: targetExamUuid,
             },
           },
         });

@@ -454,6 +454,8 @@ begin
     case 
       when (new.raw_user_meta_data->>'target_exam_id') = 'exam-ssc' 
       then '433a7ad1-77ad-4560-bf88-a739b8bc7e6a'::uuid
+      when (new.raw_user_meta_data->>'target_exam_id') = 'exam-upsc' 
+      then '123e4567-e89b-12d3-a456-426614174000'::uuid
       when (new.raw_user_meta_data->>'target_exam_id') = 'exam-rrb' 
       then 'b7c53d10-8b1b-4f51-b0db-bcf643f8e52e'::uuid
       when (new.raw_user_meta_data->>'target_exam_id') ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'

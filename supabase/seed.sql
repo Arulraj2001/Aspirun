@@ -19,6 +19,7 @@ on conflict (id) do nothing;
 insert into public.exams (id, category_id, name, slug, description, eligibility, syllabus, exam_pattern, official_url, status)
 values
   ('433a7ad1-77ad-4560-bf88-a739b8bc7e6a', '888e99ab-60a6-4be9-aa2b-b9ab5bcf65eb', 'SSC CGL', 'ssc-cgl', 'Staff Selection Commission Combined Graduate Level Examination.', 'Graduation in any stream.', 'Quant, Reasoning, English, General Awareness.', 'Tier-I (Objective), Tier-II (Computer Based Test).', 'https://ssc.gov.in', 'published'),
+  ('123e4567-e89b-12d3-a456-426614174000', 'e23a9ab0-bb7a-42cd-bf6b-dbdf6c23f18e', 'UPSC Civil Services', 'upsc-csa', 'Union Public Service Commission Civil Services Examination.', 'Graduation in any stream.', 'History, Polity, Geography, General Studies.', 'Prelims (Objective), Mains (Descriptive), Interview.', 'https://upsc.gov.in', 'published'),
   ('b7c53d10-8b1b-4f51-b0db-bcf643f8e52e', '5a5d89ab-76f5-4293-86ab-dcd6be8bc5ea', 'Railway Group D', 'rrb-group-d', 'RRB Level 1 Track Maintainer and helper recruitments.', '10th standard pass or ITI.', 'General Science, Math, General Intelligence & GK.', 'Single CBT followed by Physical Efficiency Test.', 'https://indianrailways.gov.in', 'published'),
   ('da23e200-a49e-49b8-aa39-c5c8f18bc7e1', 'c22d7ad0-7a91-4cf1-8a9d-b8bc88b5e9ee', 'Police Constable', 'police-constable', 'State-wise police constable entry-level exams.', '12th standard pass.', 'Aptitude, reasoning, regional general knowledge.', 'Written test, physical screening, medical test.', '#', 'published')
 on conflict (id) do nothing;
