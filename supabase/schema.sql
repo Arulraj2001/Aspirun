@@ -376,6 +376,7 @@ create table public.payment_requests (
   upi_transaction_id text not null unique,
   screenshot_url text,
   notes text,
+  admin_note text,
   status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
   reviewed_by uuid references public.profiles(id) on delete set null,
   reviewed_at timestamp with time zone,

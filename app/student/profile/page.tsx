@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { mockPlans } from '@/data/mockData';
 import { supabase } from '@/lib/supabase/client';
-import { User, Shield, RefreshCw, Upload, Check, AlertTriangle, Bell } from 'lucide-react';
+import { User, Shield, RefreshCw, Upload, Check, AlertTriangle, Bell, CreditCard, Sparkles, XCircle, Hourglass } from 'lucide-react';
+import Link from 'next/link';
 
 interface UserProfile {
   fullName: string;
@@ -43,6 +44,9 @@ export default function StudentProfile() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [usernameConflict, setUsernameConflict] = useState(false);
   const [checkingUsername, setCheckingUsername] = useState(false);
+  const [payments, setPayments] = useState<any[]>([]);
+  const [subscriptions, setSubscriptions] = useState<any[]>([]);
+  const [isConfigured, setIsConfigured] = useState(false);
 
   // Notification Preferences state
   const [notifEmails, setNotifEmails] = useState(true);
@@ -56,12 +60,15 @@ export default function StudentProfile() {
 
     // 2. Load profile (either real Supabase profiles table, or local mock data)
     const loadProfile = async () => {
-      const isConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL && 
+      const configured = !!process.env.NEXT_PUBLIC_SUPABASE_URL && 
                            !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project-id');
+      setIsConfigured(configured);
       
       let profileData: UserProfile | null = null;
+      let userPayments: any[] = [];
+      let userSubs: any[] = [];
 
-      if (isConfigured) {
+      if (configured) {
         try {
           const { data: { session } } = await supabase.auth.getSession();
           if (session) {
@@ -83,9 +90,25 @@ export default function StudentProfile() {
                 avatarUrl: data.avatar_url || '',
               };
             }
+
+            // Load payments history
+            const { data: pay } = await supabase
+              .from('payment_requests')
+              .select('*')
+              .eq('user_id', session.user.id)
+              .order('created_at', { ascending: false });
+            if (pay) userPayments = pay;
+
+            // Load subscriptions passes
+            const { data: sub } = await supabase
+              .from('student_subscriptions')
+              .select('*, subscription_plans(name)')
+              .eq('user_id', session.user.id)
+              .order('created_at', { ascending: false });
+            if (sub) userSubs = sub;
           }
         } catch (err) {
-          console.error('Failed to load Supabase profile:', err);
+          console.error('Failed to load Supabase profile & billing:', err);
         }
       } else {
         // Mock fallback
@@ -97,6 +120,24 @@ export default function StudentProfile() {
             console.error('Failed to parse simulated profile:', e);
           }
         }
+
+        // Payments fallback
+        const savedPay = localStorage.getItem('payment_requests_db') || '[]';
+        userPayments = JSON.parse(savedPay).filter((p: any) => p.username === 'siddharth_99' || p.user === 'Siddharth Mishra');
+
+        // Subscriptions fallback
+        const savedSub = localStorage.getItem('simulated_subscription');
+        if (savedSub) {
+          const sub = JSON.parse(savedSub);
+          userSubs = [{
+            id: 'sim-sub-id',
+            starts_at: sub.starts_at,
+            ends_at: sub.ends_at,
+            amount_paid: 599.00,
+            status: sub.status,
+            subscription_plans: { name: sub.name }
+          }];
+        }
       }
 
       setTimeout(() => {
@@ -106,6 +147,8 @@ export default function StudentProfile() {
         if (profileData) {
           setProfile(profileData);
         }
+        setPayments(userPayments);
+        setSubscriptions(userSubs);
       }, 0);
     };
 
@@ -466,6 +509,118 @@ export default function StudentProfile() {
                   <p className="text-[10px] text-surface-400 font-semibold mt-0.5">Receive email scorecard updates with detailed solution analytics upon submissions.</p>
                 </div>
               </label>
+            </div>
+          </Card>
+
+          {/* Billing & Membership Pass History */}
+          <Card className="border border-surface-200 bg-white">
+            <h3 className="text-base font-extrabold text-surface-900 mb-4 flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-brand-500" />
+              Billing & Membership History
+            </h3>
+
+            {/* Active Subscription Details */}
+            {subscriptions.length > 0 ? (
+              <div className="mb-6 p-4 bg-brand-50/20 border border-brand-200 rounded-2xl">
+                <h4 className="text-xs font-black uppercase text-brand-650 tracking-wider flex items-center gap-1.5 mb-2">
+                  <Sparkles className="h-4 w-4 text-brand-500 animate-pulse" /> Active Pro Membership Pass
+                </h4>
+                {subscriptions.map((sub) => {
+                  const daysLeft = Math.max(0, Math.ceil((new Date(sub.ends_at).getTime() - new Date().getTime()) / (1000 * 3600 * 24)));
+                  return (
+                    <div key={sub.id} className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-bold text-surface-650">
+                      <div>
+                        <span className="text-[10px] text-surface-400 font-extrabold uppercase">Plan Name</span>
+                        <p className="text-brand-650 font-black text-sm">{sub.subscription_plans?.name || 'Aspirav Pro'}</p>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-surface-400 font-extrabold uppercase">Valid Until</span>
+                        <p className="text-surface-850">{new Date(sub.ends_at).toLocaleDateString('en-IN', { dateStyle: 'medium' })}</p>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-surface-400 font-extrabold uppercase">Remaining Days</span>
+                        <p className="text-success-700 font-black text-sm">{daysLeft} Days Remaining</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="mb-6 p-4 bg-surface-50 border border-surface-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <h4 className="text-xs font-black text-surface-850">Standard Account (Free Tier)</h4>
+                  <p className="text-[10px] text-surface-450 font-semibold mt-0.5">Upgrade to gain full access to premium mock tests, syllabus roadmaps, and guidelines notes.</p>
+                </div>
+                <Link href="/pricing">
+                  <Button size="sm" variant="primary" className="text-[10px] font-black uppercase tracking-wider">
+                    Upgrade Now
+                  </Button>
+                </Link>
+              </div>
+            )}
+
+            {/* Invoices List */}
+            <div>
+              <h4 className="text-xs font-black uppercase text-surface-850 tracking-wider mb-3">Invoice & Verification Queue</h4>
+              {payments.length === 0 ? (
+                <p className="text-xs text-surface-450 font-semibold py-4 text-center">No payment checkout requests found.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs font-semibold text-surface-650">
+                    <thead>
+                      <tr className="border-b border-surface-100 text-[10px] text-surface-400 font-extrabold uppercase bg-surface-50/50">
+                        <th className="py-2.5 px-3">Date</th>
+                        <th className="py-2.5 px-3">Type</th>
+                        <th className="py-2.5 px-3">Amount</th>
+                        <th className="py-2.5 px-3">UTR Transaction ID</th>
+                        <th className="py-2.5 px-3 text-center">Receipt Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-surface-100">
+                      {payments.map((req) => (
+                        <React.Fragment key={req.id}>
+                          <tr className="hover:bg-surface-50/20">
+                            <td className="py-3 px-3 text-[11px] whitespace-nowrap">
+                              {new Date(req.created_at || req.dateCreated).toLocaleDateString('en-IN', { dateStyle: 'short' })}
+                            </td>
+                            <td className="py-3 px-3 uppercase text-[10px] font-black text-brand-650">
+                              {req.content_type || req.contentType}
+                            </td>
+                            <td className="py-3 px-3 font-extrabold text-surface-850">
+                              ₹{req.amount}
+                            </td>
+                            <td className="py-3 px-3 font-mono text-[11px] text-surface-550">
+                              {req.upi_transaction_id || req.upiTransactionId}
+                            </td>
+                            <td className="py-3 px-3 text-center">
+                              <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border ${
+                                req.status === 'approved'
+                                  ? 'bg-success-50 text-success-700 border-success-100'
+                                  : req.status === 'rejected'
+                                  ? 'bg-danger-50 text-danger-700 border-danger-100'
+                                  : 'bg-orange-50 text-orange-700 border-orange-100'
+                              }`}>
+                                {req.status === 'approved' && <Check className="h-3 w-3" />}
+                                {req.status === 'rejected' && <XCircle className="h-3 w-3" />}
+                                {req.status === 'pending' && <Hourglass className="h-3 w-3 animate-spin" />}
+                                {req.status}
+                              </span>
+                            </td>
+                          </tr>
+                          {req.status === 'rejected' && (req.admin_note || req.adminNote) && (
+                            <tr className="bg-danger-50/10">
+                              <td colSpan={5} className="py-2 px-3 text-[10px] text-danger-700 border-t-0 font-semibold leading-normal">
+                                <span className="font-extrabold uppercase text-[9px] text-danger-600 block">Rejection Note:</span>
+                                {req.admin_note || req.adminNote}
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </Card>
 
