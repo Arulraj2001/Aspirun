@@ -430,11 +430,31 @@ create trigger tr_payment_settings_updated before update on public.payment_setti
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id, full_name, email, role, community_status)
+  insert into public.profiles (
+    id, 
+    full_name, 
+    username,
+    email, 
+    phone,
+    city,
+    qualification,
+    target_exam_id,
+    role, 
+    community_status
+  )
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'full_name', ''),
+    coalesce(new.raw_user_meta_data->>'username', 'user_' || substring(new.id::text from 1 for 8)),
     new.email,
+    new.raw_user_meta_data->>'phone',
+    new.raw_user_meta_data->>'city',
+    new.raw_user_meta_data->>'qualification',
+    case 
+      when (new.raw_user_meta_data->>'target_exam_id') is not null and (new.raw_user_meta_data->>'target_exam_id') <> ''
+      then cast(new.raw_user_meta_data->>'target_exam_id' as uuid)
+      else null 
+    end,
     'student',
     'active'
   );
@@ -445,6 +465,20 @@ $$ language plpgsql security definer;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
+
+-- Trigger to automatically confirm email addresses upon registration (avoids pending verification lock)
+create or replace function public.auto_confirm_user_email()
+returns trigger as $$
+begin
+  new.email_confirmed_at := now();
+  new.confirmed_at := now();
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create trigger tr_auto_confirm_user_email
+  before insert on auth.users
+  for each row execute procedure public.auto_confirm_user_email();
 
 -- Post moderation validation function
 -- Prevents muted or banned profiles from inserting threads/replies
