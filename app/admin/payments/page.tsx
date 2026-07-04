@@ -6,6 +6,7 @@ import { Container } from '@/components/ui/Container';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ArrowLeft, ArrowRight, HelpCircle } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
 
 interface PaymentRequest {
   id: string;
@@ -29,36 +30,95 @@ export default function AdminPaymentsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load payment requests
-    const saved = localStorage.getItem('payment_requests_db');
-    let data: PaymentRequest[] = [];
-    if (saved) {
-      data = JSON.parse(saved);
-    } else {
-      // Seed two requests
-      data = [
-        {
-          id: 'pay-seed-1',
-          user: 'Siddharth Mishra',
-          username: 'siddharth_99',
-          contentType: 'study_plan',
-          contentId: 'plan-upsc-polity-30',
-          contentTitle: 'UPSC CSE Polity 30-Day Masterplan',
-          amount: 99,
-          upiTransactionId: '617283940123',
-          notes: 'Completed UPI transfer. Please approve.',
-          status: 'pending',
-          adminNote: '',
-          dateCreated: new Date().toISOString()
-        }
-      ];
-      localStorage.setItem('payment_requests_db', JSON.stringify(data));
-    }
+    const isConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                         !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project-id');
 
-    setTimeout(() => {
-      setRequests(data);
-      setLoading(false);
-    }, 0);
+    const loadRequests = async () => {
+      if (isConfigured) {
+        try {
+          // 1. Fetch study items caches to resolve titles
+          const [plansRes, testsRes, matsRes] = await Promise.all([
+            supabase.from('study_plans').select('id, name'),
+            supabase.from('mock_tests').select('id, title'),
+            supabase.from('materials').select('id, title')
+          ]);
+
+          const titleMap: Record<string, string> = {};
+          plansRes.data?.forEach(p => { titleMap[p.id] = p.name; });
+          testsRes.data?.forEach(t => { titleMap[t.id] = t.title; });
+          matsRes.data?.forEach(m => { titleMap[m.id] = m.title; });
+
+          // 2. Fetch all payment requests with profiles join
+          const { data, error } = await supabase
+            .from('payment_requests')
+            .select(`
+              *,
+              profiles:user_id (
+                full_name,
+                username
+              )
+            `)
+            .order('created_at', { ascending: false });
+
+          if (error) throw error;
+
+          if (data) {
+            const mapped: PaymentRequest[] = data.map((item) => {
+              const profile = item.profiles as any;
+              return {
+                id: item.id,
+                user: profile?.full_name || 'Anonymous User',
+                username: profile?.username || 'anonymous',
+                contentType: item.content_type === 'plan' ? 'study_plan' : item.content_type,
+                contentId: item.content_id,
+                contentTitle: titleMap[item.content_id] || `Content Access: ${item.content_id}`,
+                amount: Number(item.amount),
+                upiTransactionId: item.upi_transaction_id,
+                screenshot: item.screenshot_url || undefined,
+                notes: item.notes || undefined,
+                status: item.status,
+                adminNote: item.admin_note || '',
+                dateCreated: item.created_at
+              };
+            });
+            setRequests(mapped);
+          }
+        } catch (err) {
+          console.error("Failed to query live payment requests:", err);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        // Simulation Fallback
+        const saved = localStorage.getItem('payment_requests_db');
+        let data: PaymentRequest[] = [];
+        if (saved) {
+          data = JSON.parse(saved);
+        } else {
+          data = [
+            {
+              id: 'pay-seed-1',
+              user: 'Siddharth Mishra',
+              username: 'siddharth_99',
+              contentType: 'study_plan',
+              contentId: 'plan-upsc-polity-30',
+              contentTitle: 'UPSC CSE Polity 30-Day Masterplan',
+              amount: 99,
+              upiTransactionId: '617283940123',
+              notes: 'Completed UPI transfer. Please approve.',
+              status: 'pending',
+              adminNote: '',
+              dateCreated: new Date().toISOString()
+            }
+          ];
+          localStorage.setItem('payment_requests_db', JSON.stringify(data));
+        }
+        setRequests(data);
+        setLoading(false);
+      }
+    };
+
+    loadRequests();
   }, []);
 
   const filteredRequests = requests.filter((r) => {

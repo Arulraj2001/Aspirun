@@ -10,6 +10,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { mockExams, mockMaterials, mockPlans } from '@/data/mockData';
 import { StudyMaterial } from '@/types';
 import { PaymentModal } from '@/components/payments/PaymentModal';
+import { supabase } from '@/lib/supabase/client';
 import {
   Calendar,
   Download,
@@ -98,37 +99,103 @@ export default function MaterialDetailPage({ params }: PageProps) {
     localStorage.setItem('saved_materials_ids', JSON.stringify(updated));
   };
 
-  const syncAccessData = useCallback(() => {
+  const syncAccessData = useCallback(async () => {
     if (!material) return;
 
-    const settingsSaved = localStorage.getItem('payment_settings');
+    const isConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                         !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project-id');
+
     let paymentMode = false;
-    if (settingsSaved) {
-      const settings = JSON.parse(settingsSaved);
-      paymentMode = settings.payment_mode === 'on';
+
+    if (isConfigured) {
+      try {
+        const { data } = await supabase.from('payment_settings').select('payment_mode').limit(1).maybeSingle();
+        if (data) {
+          paymentMode = data.payment_mode === 'on';
+        }
+      } catch (err) {
+        console.error("Failed to load payment lock mode from db:", err);
+      }
+    } else {
+      const settingsSaved = localStorage.getItem('payment_settings');
+      if (settingsSaved) {
+        const settings = JSON.parse(settingsSaved);
+        paymentMode = settings.payment_mode === 'on';
+      }
     }
 
     if (!paymentMode || material.isFree) {
-      setTimeout(() => {
-        setIsPaymentModeOn(paymentMode);
-        setHasAccess(true);
-      }, 0);
+      setIsPaymentModeOn(paymentMode);
+      setHasAccess(true);
       return;
     }
 
-    const accessSaved = localStorage.getItem('user_content_access_db') || '[]';
-    const accessList: UserContentAccess[] = JSON.parse(accessSaved);
-    const ownsItem = accessList.some(
-      (a) => a.username === 'siddharth_99' && a.contentType === 'material' && a.contentId === material.id
-    );
+    if (isConfigured) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          setIsPaymentModeOn(paymentMode);
+          setHasAccess(false);
+          setPendingPayment(null);
+          return;
+        }
 
-    const payReqsSaved = localStorage.getItem('payment_requests_db') || '[]';
-    const allReqs: PaymentRequest[] = JSON.parse(payReqsSaved);
-    const matchingReq = allReqs.find(
-      (r) => r.username === 'siddharth_99' && r.contentType === 'material' && r.contentId === material.id
-    );
+        // 1. Check access record
+        const { data: access } = await supabase
+          .from('user_content_access')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .eq('content_type', 'material')
+          .eq('content_id', material.id)
+          .maybeSingle();
 
-    setTimeout(() => {
+        // 2. Check pending request record
+        const { data: req } = await supabase
+          .from('payment_requests')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .eq('content_type', 'material')
+          .eq('content_id', material.id)
+          .maybeSingle();
+
+        setIsPaymentModeOn(paymentMode);
+        setHasAccess(!!access);
+        if (req) {
+          setPendingPayment({
+            id: req.id,
+            user: '',
+            username: '',
+            contentType: 'material',
+            contentId: req.content_id,
+            contentTitle: material.title,
+            amount: Number(req.amount),
+            upiTransactionId: req.upi_transaction_id,
+            screenshot: req.screenshot_url || undefined,
+            notes: req.notes || undefined,
+            status: req.status,
+            adminNote: req.admin_note || undefined,
+            dateCreated: req.created_at
+          });
+        } else {
+          setPendingPayment(null);
+        }
+      } catch (err) {
+        console.error("Database access sync failed:", err);
+      }
+    } else {
+      // Local Storage Fallback
+      const accessSaved = localStorage.getItem('user_content_access_db') || '[]';
+      const accessList: UserContentAccess[] = JSON.parse(accessSaved);
+      const ownsItem = accessList.some(
+        (a) => a.username === 'siddharth_99' && a.contentType === 'material' && a.contentId === material.id
+      );
+
+      const payReqsSaved = localStorage.getItem('payment_requests_db') || '[]';
+      const allReqs: PaymentRequest[] = JSON.parse(payReqsSaved);
+      const matchingReq = allReqs.find(
+        (r) => r.username === 'siddharth_99' && r.contentType === 'material' && r.contentId === material.id
+      );
+
       setIsPaymentModeOn(paymentMode);
       setHasAccess(ownsItem);
       if (matchingReq) {
@@ -136,7 +203,7 @@ export default function MaterialDetailPage({ params }: PageProps) {
       } else {
         setPendingPayment(null);
       }
-    }, 0);
+    }
   }, [material]);
 
   useEffect(() => {

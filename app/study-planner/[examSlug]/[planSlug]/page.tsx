@@ -11,6 +11,7 @@ import { DifficultyBadge } from '@/components/ui/DifficultyBadge';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { mockPlans, mockExams, mockMaterials, mockMockTests } from '@/data/mockData';
 import { PaymentModal } from '@/components/payments/PaymentModal';
+import { supabase } from '@/lib/supabase/client';
 import {
   Calendar,
   Compass,
@@ -70,41 +71,103 @@ export default function StudyPlanDetailPage({ params }: PageProps) {
   const plan = mockPlans.find((p) => p.slug === planSlug || p.id === planSlug);
   const exam = mockExams.find((e) => e.slug === examSlug);
 
-  const syncAccessData = useCallback(() => {
+  const syncAccessData = useCallback(async () => {
     if (!plan) return;
 
-    // 1. Check payment settings
-    const settingsSaved = localStorage.getItem('payment_settings');
+    const isConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                         !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project-id');
+
     let paymentMode = false;
-    if (settingsSaved) {
-      const settings = JSON.parse(settingsSaved);
-      paymentMode = settings.payment_mode === 'on';
+
+    if (isConfigured) {
+      try {
+        const { data } = await supabase.from('payment_settings').select('payment_mode').limit(1).maybeSingle();
+        if (data) {
+          paymentMode = data.payment_mode === 'on';
+        }
+      } catch (err) {
+        console.error("Failed to load payment lock mode from db:", err);
+      }
+    } else {
+      const settingsSaved = localStorage.getItem('payment_settings');
+      if (settingsSaved) {
+        const settings = JSON.parse(settingsSaved);
+        paymentMode = settings.payment_mode === 'on';
+      }
     }
 
-    // 2. Check if content is free or payment mode is off
     if (!paymentMode || plan.isFree) {
-      setTimeout(() => {
-        setIsPaymentModeOn(paymentMode);
-        setHasAccess(true);
-      }, 0);
+      setIsPaymentModeOn(paymentMode);
+      setHasAccess(true);
       return;
     }
 
-    // 3. Check access row
-    const accessSaved = localStorage.getItem('user_content_access_db') || '[]';
-    const accessList: UserContentAccess[] = JSON.parse(accessSaved);
-    const ownsItem = accessList.some(
-      (a) => a.username === 'siddharth_99' && a.contentType === 'study_plan' && a.contentId === plan.id
-    );
+    if (isConfigured) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          setIsPaymentModeOn(paymentMode);
+          setHasAccess(false);
+          setPendingPayment(null);
+          return;
+        }
 
-    // 4. Check pending payment request
-    const payReqsSaved = localStorage.getItem('payment_requests_db') || '[]';
-    const allReqs: PaymentRequest[] = JSON.parse(payReqsSaved);
-    const matchingReq = allReqs.find(
-      (r) => r.username === 'siddharth_99' && r.contentType === 'study_plan' && r.contentId === plan.id
-    );
+        // 1. Check access (db check constraint content_type is 'plan')
+        const { data: access } = await supabase
+          .from('user_content_access')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .eq('content_type', 'plan')
+          .eq('content_id', plan.id)
+          .maybeSingle();
 
-    setTimeout(() => {
+        // 2. Check pending request
+        const { data: req } = await supabase
+          .from('payment_requests')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .eq('content_type', 'plan')
+          .eq('content_id', plan.id)
+          .maybeSingle();
+
+        setIsPaymentModeOn(paymentMode);
+        setHasAccess(!!access);
+        if (req) {
+          setPendingPayment({
+            id: req.id,
+            user: '',
+            username: '',
+            contentType: 'study_plan',
+            contentId: req.content_id,
+            contentTitle: plan.title,
+            amount: Number(req.amount),
+            upiTransactionId: req.upi_transaction_id,
+            screenshot: req.screenshot_url || undefined,
+            notes: req.notes || undefined,
+            status: req.status,
+            adminNote: req.admin_note || undefined,
+            dateCreated: req.created_at
+          });
+        } else {
+          setPendingPayment(null);
+        }
+      } catch (err) {
+        console.error("Database access sync failed:", err);
+      }
+    } else {
+      // Local Storage Fallback
+      const accessSaved = localStorage.getItem('user_content_access_db') || '[]';
+      const accessList: UserContentAccess[] = JSON.parse(accessSaved);
+      const ownsItem = accessList.some(
+        (a) => a.username === 'siddharth_99' && a.contentType === 'study_plan' && a.contentId === plan.id
+      );
+
+      const payReqsSaved = localStorage.getItem('payment_requests_db') || '[]';
+      const allReqs: PaymentRequest[] = JSON.parse(payReqsSaved);
+      const matchingReq = allReqs.find(
+        (r) => r.username === 'siddharth_99' && r.contentType === 'study_plan' && r.contentId === plan.id
+      );
+
       setIsPaymentModeOn(paymentMode);
       setHasAccess(ownsItem);
       if (matchingReq) {
@@ -112,7 +175,7 @@ export default function StudyPlanDetailPage({ params }: PageProps) {
       } else {
         setPendingPayment(null);
       }
-    }, 0);
+    }
   }, [plan]);
 
   useEffect(() => {

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { ShieldAlert, Check, Copy, HelpCircle } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
 
 interface PaymentModalProps {
   contentType: 'study_plan' | 'material' | 'mock_test';
@@ -37,29 +38,51 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    // 1. Load payment settings
-    const savedSettings = localStorage.getItem('payment_settings');
-    let settings = {
-      upi_id: 'aspirav@upi',
-      upi_name: 'Aspirav Education Private Limited',
-      qr_code_image: '',
-      payment_instructions: '1. Scan QR code or copy official UPI ID.\n2. Pay the amount shown.\n3. Copy the 12-digit UPI Transaction ID / UTR and paste it here.',
-      support_whatsapp: '+91 9876543210'
-    };
-    if (savedSettings) {
-      settings = JSON.parse(savedSettings);
-    }
+    const isConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                         !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project-id');
 
-    const payUrl = `upi://pay?pa=${settings.upi_id}&pn=${encodeURIComponent(settings.upi_name)}&am=${amount}&cu=INR`;
-    const defaultQR = settings.qr_code_image || `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(payUrl)}`;
+    const loadSettings = async () => {
+      let settings = {
+        upi_id: 'aspirav@upi',
+        upi_name: 'Aspirav Education Private Limited',
+        qr_code_image: '',
+        payment_instructions: '1. Scan QR code or copy official UPI ID.\n2. Pay the amount shown.\n3. Copy the 12-digit UPI Transaction ID / UTR and paste it here.',
+        support_whatsapp: '+91 9876543210'
+      };
 
-    setTimeout(() => {
+      if (isConfigured) {
+        try {
+          const { data } = await supabase.from('payment_settings').select('*').limit(1).maybeSingle();
+          if (data) {
+            settings = {
+              upi_id: data.upi_id || settings.upi_id,
+              upi_name: data.upi_name || settings.upi_name,
+              qr_code_image: data.qr_code_url || settings.qr_code_image,
+              payment_instructions: data.payment_instructions || settings.payment_instructions,
+              support_whatsapp: data.support_whatsapp || settings.support_whatsapp
+            };
+          }
+        } catch (err) {
+          console.error("Failed to load live payment configurations:", err);
+        }
+      } else {
+        const savedSettings = localStorage.getItem('payment_settings');
+        if (savedSettings) {
+          settings = JSON.parse(savedSettings);
+        }
+      }
+
+      const payUrl = `upi://pay?pa=${settings.upi_id}&pn=${encodeURIComponent(settings.upi_name)}&am=${amount}&cu=INR`;
+      const defaultQR = settings.qr_code_image || `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(payUrl)}`;
+
       setUpiId(settings.upi_id);
       setUpiName(settings.upi_name);
       setInstructions(settings.payment_instructions);
       setSupportPhone(settings.support_whatsapp);
       setQrCode(defaultQR);
-    }, 0);
+    };
+
+    loadSettings();
   }, [amount]);
 
   const handleCopyUPI = () => {
@@ -78,7 +101,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     reader.readAsDataURL(file);
   };
 
-  const handleSubmitRequest = (e: React.FormEvent) => {
+  const handleSubmitRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!transactionId.trim() || transactionId.trim().length < 8) {
       alert('Please enter a valid UPI Transaction / UTR ID.');
@@ -87,32 +110,81 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
     setIsSubmitting(true);
 
-    const newRequest = {
-      id: `pay-req-${Date.now()}`,
-      user: 'Siddharth Mishra',
-      username: 'siddharth_99',
-      contentType,
-      contentId,
-      contentTitle,
-      amount,
-      upiTransactionId: transactionId,
-      screenshot,
-      notes,
-      status: 'pending',
-      adminNote: '',
-      dateCreated: new Date().toISOString()
-    };
+    const isConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                         !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project-id');
 
-    const savedReqs = localStorage.getItem('payment_requests_db') || '[]';
-    const allReqs = JSON.parse(savedReqs);
-    allReqs.push(newRequest);
-    localStorage.setItem('payment_requests_db', JSON.stringify(allReqs));
+    if (isConfigured) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          alert('You must be signed in to purchase content. Please sign in and try again.');
+          setIsSubmitting(false);
+          return;
+        }
 
-    setTimeout(() => {
-      setIsSubmitting(false);
-      alert('Payment submission logged. Your access will be unlocked once verification is approved by study administrator.');
-      onSubmitSuccess();
-    }, 800);
+        // Map visual contentType to PostgreSQL check constraint options
+        const dbContentType = contentType === 'study_plan' ? 'plan' : contentType;
+
+        const { error } = await supabase
+          .from('payment_requests')
+          .insert({
+            user_id: session.user.id,
+            content_type: dbContentType,
+            content_id: contentId,
+            amount: amount,
+            upi_transaction_id: transactionId,
+            screenshot_url: screenshot || null,
+            notes: notes || null,
+            status: 'pending'
+          });
+
+        if (error) {
+          if (error.message.includes('unique') || error.code === '23505') {
+            alert('This UPI Transaction / UTR ID has already been submitted for audit. Please contact support if this is a mistake.');
+          } else {
+            alert(`Payment submission failed: ${error.message}`);
+          }
+          setIsSubmitting(false);
+          return;
+        }
+
+        alert('Payment submission logged. Your access will be unlocked once verification is approved by study administrator.');
+        setIsSubmitting(false);
+        onSubmitSuccess();
+      } catch (err) {
+        console.error("Supabase checkout error:", err);
+        alert('An unexpected error occurred during database request. Please try again.');
+        setIsSubmitting(false);
+      }
+    } else {
+      // Simulation Mode
+      const newRequest = {
+        id: `pay-req-${Date.now()}`,
+        user: 'Siddharth Mishra',
+        username: 'siddharth_99',
+        contentType,
+        contentId,
+        contentTitle,
+        amount,
+        upiTransactionId: transactionId,
+        screenshot,
+        notes,
+        status: 'pending',
+        adminNote: '',
+        dateCreated: new Date().toISOString()
+      };
+
+      const savedReqs = localStorage.getItem('payment_requests_db') || '[]';
+      const allReqs = JSON.parse(savedReqs);
+      allReqs.push(newRequest);
+      localStorage.setItem('payment_requests_db', JSON.stringify(allReqs));
+
+      setTimeout(() => {
+        setIsSubmitting(false);
+        alert('Payment submission logged. Your access will be unlocked once verification is approved by study administrator.');
+        onSubmitSuccess();
+      }, 800);
+    }
   };
 
   return (

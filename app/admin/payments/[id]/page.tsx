@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Textarea';
 import { ArrowLeft, CheckCircle, XCircle, AlertTriangle, User } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -17,6 +18,7 @@ interface PaymentRequest {
   id: string;
   user: string;
   username: string;
+  userId: string; // Keep user_id to insert into user_content_access
   contentType: 'study_plan' | 'material' | 'mock_test';
   contentId: string;
   contentTitle: string;
@@ -43,61 +45,162 @@ export default function AdminPaymentDetailPage({ params }: PageProps) {
   const [adminNote, setAdminNote] = useState('');
   const [loading, setLoading] = useState(true);
 
-  const syncRequestData = useCallback(() => {
-    const saved = localStorage.getItem('payment_requests_db') || '[]';
-    const allReqs: PaymentRequest[] = JSON.parse(saved);
-    const found = allReqs.find((r) => r.id === id);
+  const syncRequestData = useCallback(async () => {
+    const isConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                         !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project-id');
 
-    setTimeout(() => {
+    if (isConfigured) {
+      try {
+        const { data: item, error } = await supabase
+          .from('payment_requests')
+          .select('*, profiles:user_id(id, full_name, username)')
+          .eq('id', id)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (item) {
+          // Resolve content title based on type
+          let itemTitle = `Content Access: ${item.content_id}`;
+          if (item.content_type === 'plan') {
+            const { data } = await supabase.from('study_plans').select('name').eq('id', item.content_id).maybeSingle();
+            if (data) itemTitle = data.name;
+          } else if (item.content_type === 'mock_test') {
+            const { data } = await supabase.from('mock_tests').select('title').eq('id', item.content_id).maybeSingle();
+            if (data) itemTitle = data.title;
+          } else if (item.content_type === 'material') {
+            const { data } = await supabase.from('materials').select('title').eq('id', item.content_id).maybeSingle();
+            if (data) itemTitle = data.title;
+          }
+
+          const profile = item.profiles as any;
+
+          setRequest({
+            id: item.id,
+            user: profile?.full_name || 'Anonymous User',
+            username: profile?.username || 'anonymous',
+            userId: item.user_id,
+            contentType: item.content_type === 'plan' ? 'study_plan' : item.content_type,
+            contentId: item.content_id,
+            contentTitle: itemTitle,
+            amount: Number(item.amount),
+            upiTransactionId: item.upi_transaction_id,
+            screenshot: item.screenshot_url || undefined,
+            notes: item.notes || undefined,
+            status: item.status,
+            adminNote: item.admin_note || '',
+            dateCreated: item.created_at
+          });
+          setAdminNote(item.admin_note || '');
+        }
+      } catch (err) {
+        console.error("Failed to fetch detailed payment request:", err);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      const saved = localStorage.getItem('payment_requests_db') || '[]';
+      const allReqs: PaymentRequest[] = JSON.parse(saved);
+      const found = allReqs.find((r) => r.id === id);
+
       if (found) {
         setRequest(found);
         setAdminNote(found.adminNote || '');
       }
       setLoading(false);
-    }, 0);
+    }
   }, [id]);
 
   useEffect(() => {
     syncRequestData();
   }, [id, syncRequestData]);
 
-  const handleApprove = () => {
+  const handleApprove = async () => {
     if (!request) return;
     if (!confirm('Are you sure you want to APPROVE this payment? This will immediately unlock content access for the student.')) {
       return;
     }
 
-    const saved = localStorage.getItem('payment_requests_db') || '[]';
-    const allReqs: PaymentRequest[] = JSON.parse(saved);
-    const updatedReqs = allReqs.map((r) => {
-      if (r.id === id) {
-        return { ...r, status: 'approved', adminNote };
+    const isConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                         !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project-id');
+
+    if (isConfigured) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          alert('Verification session expired. Please sign in again.');
+          return;
+        }
+
+        const dbContentType = request.contentType === 'study_plan' ? 'plan' : request.contentType;
+
+        // 1. Update request record
+        const { error: updateError } = await supabase
+          .from('payment_requests')
+          .update({
+            status: 'approved',
+            admin_note: adminNote,
+            reviewed_by: session.user.id,
+            reviewed_at: new Date().toISOString()
+          })
+          .eq('id', id);
+
+        if (updateError) throw updateError;
+
+        // 2. Grant access record (on conflict do nothing)
+        const { error: accessError } = await supabase
+          .from('user_content_access')
+          .insert({
+            user_id: request.userId,
+            content_type: dbContentType,
+            content_id: request.contentId,
+            granted_by: session.user.id
+          });
+
+        if (accessError && !accessError.message.includes('unique') && accessError.code !== '23505') {
+          throw accessError;
+        }
+
+        alert('Payment approved. Premium access keys successfully granted.');
+        router.push('/admin/payments');
+      } catch (err: any) {
+        console.error("Approval flow failed:", err);
+        alert(`Failed to approve payment request: ${err.message}`);
       }
-      return r;
-    });
-    localStorage.setItem('payment_requests_db', JSON.stringify(updatedReqs));
-
-    // Create user content access row
-    const savedAccess = localStorage.getItem('user_content_access_db') || '[]';
-    const allAccess: UserContentAccess[] = JSON.parse(savedAccess);
-    const alreadyOwns = allAccess.some(
-      (a) => a.username === request.username && a.contentType === request.contentType && a.contentId === request.contentId
-    );
-
-    if (!alreadyOwns) {
-      allAccess.push({
-        username: request.username,
-        contentType: request.contentType,
-        contentId: request.contentId
+    } else {
+      // Simulation mode
+      const saved = localStorage.getItem('payment_requests_db') || '[]';
+      const allReqs: PaymentRequest[] = JSON.parse(saved);
+      const updatedReqs = allReqs.map((r) => {
+        if (r.id === id) {
+          return { ...r, status: 'approved', adminNote };
+        }
+        return r;
       });
-      localStorage.setItem('user_content_access_db', JSON.stringify(allAccess));
-    }
+      localStorage.setItem('payment_requests_db', JSON.stringify(updatedReqs));
 
-    alert('Payment approved. Premium access keys successfully granted.');
-    router.push('/admin/payments');
+      // Create user content access row
+      const savedAccess = localStorage.getItem('user_content_access_db') || '[]';
+      const allAccess: UserContentAccess[] = JSON.parse(savedAccess);
+      const alreadyOwns = allAccess.some(
+        (a) => a.username === request.username && a.contentType === request.contentType && a.contentId === request.contentId
+      );
+
+      if (!alreadyOwns) {
+        allAccess.push({
+          username: request.username,
+          contentType: request.contentType,
+          contentId: request.contentId
+        });
+        localStorage.setItem('user_content_access_db', JSON.stringify(allAccess));
+      }
+
+      alert('Payment approved. Premium access keys successfully granted.');
+      router.push('/admin/payments');
+    }
   };
 
-  const handleReject = () => {
+  const handleReject = async () => {
     if (!request) return;
     if (!adminNote.trim()) {
       alert('Please provide an administrative note explaining the rejection reason (e.g. invalid UTR number).');
@@ -107,18 +210,50 @@ export default function AdminPaymentDetailPage({ params }: PageProps) {
       return;
     }
 
-    const saved = localStorage.getItem('payment_requests_db') || '[]';
-    const allReqs: PaymentRequest[] = JSON.parse(saved);
-    const updatedReqs = allReqs.map((r) => {
-      if (r.id === id) {
-        return { ...r, status: 'rejected', adminNote };
-      }
-      return r;
-    });
-    localStorage.setItem('payment_requests_db', JSON.stringify(updatedReqs));
+    const isConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                         !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project-id');
 
-    alert('Payment request marked as rejected.');
-    router.push('/admin/payments');
+    if (isConfigured) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          alert('Verification session expired. Please sign in again.');
+          return;
+        }
+
+        const { error } = await supabase
+          .from('payment_requests')
+          .update({
+            status: 'rejected',
+            admin_note: adminNote,
+            reviewed_by: session.user.id,
+            reviewed_at: new Date().toISOString()
+          })
+          .eq('id', id);
+
+        if (error) throw error;
+
+        alert('Payment request marked as rejected.');
+        router.push('/admin/payments');
+      } catch (err: any) {
+        console.error("Rejection flow failed:", err);
+        alert(`Failed to reject request: ${err.message}`);
+      }
+    } else {
+      // Simulation mode
+      const saved = localStorage.getItem('payment_requests_db') || '[]';
+      const allReqs: PaymentRequest[] = JSON.parse(saved);
+      const updatedReqs = allReqs.map((r) => {
+        if (r.id === id) {
+          return { ...r, status: 'rejected', adminNote };
+        }
+        return r;
+      });
+      localStorage.setItem('payment_requests_db', JSON.stringify(updatedReqs));
+
+      alert('Payment request marked as rejected.');
+      router.push('/admin/payments');
+    }
   };
 
   if (loading) {
