@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-import { GraduationCap, Lock, AlertTriangle } from 'lucide-react';
+import { GraduationCap, Lock, AlertTriangle, CheckCircle } from 'lucide-react';
 
 export default function AlertProvider() {
   const router = useRouter();
@@ -36,9 +36,54 @@ export default function AlertProvider() {
     };
   }, []);
 
-  const isLoginMessage = modalData.message.toLowerCase().includes('login');
-  const isAccessDenied = modalData.message.toLowerCase().includes('access denied') || 
-                          modalData.message.toLowerCase().includes('permission');
+  const msgLower = modalData.message.toLowerCase();
+  
+  const isLoginMessage = msgLower.includes('login');
+  const isAccessDenied = msgLower.includes('access denied') || msgLower.includes('permission');
+  const isSuccess = msgLower.includes('success') || msgLower.includes('approved') || msgLower.includes('saved') || msgLower.includes('created') || msgLower.includes('registered') || msgLower.includes('added') || msgLower.includes('published') || msgLower.includes('deleted') || msgLower.includes('removed') || msgLower.includes('cleared');
+  const isWarning = msgLower.includes('error') || msgLower.includes('fill out') || msgLower.includes('restricted') || msgLower.includes('invalid') || msgLower.includes('mandatory') || msgLower.includes('fail');
+
+  let modalTitle = "Aspirav Notice";
+  let iconContainer = (
+    <span className="p-3.5 bg-brand-50 rounded-2xl text-brand-600 mb-4 shadow-sm">
+      <GraduationCap className="h-6 w-6" />
+    </span>
+  );
+  let btnVariant: 'primary' | 'secondary' | 'outline' | 'success' | 'danger' = "primary";
+
+  if (isLoginMessage) {
+    modalTitle = "Sign In Required";
+    iconContainer = (
+      <span className="p-3.5 bg-brand-50 rounded-2xl text-brand-600 mb-4 shadow-sm">
+        <Lock className="h-6 w-6 animate-pulse" />
+      </span>
+    );
+    btnVariant = "primary";
+  } else if (isAccessDenied) {
+    modalTitle = "Security Guard";
+    iconContainer = (
+      <span className="p-3.5 bg-danger-50 rounded-2xl text-danger-600 mb-4 shadow-sm animate-bounce">
+        <AlertTriangle className="h-6 w-6" />
+      </span>
+    );
+    btnVariant = "danger";
+  } else if (isSuccess) {
+    modalTitle = "Success";
+    iconContainer = (
+      <span className="p-3.5 bg-success-50 rounded-2xl text-success-600 mb-4 shadow-sm">
+        <CheckCircle className="h-6 w-6 animate-in zoom-in duration-300" />
+      </span>
+    );
+    btnVariant = "success";
+  } else if (isWarning) {
+    modalTitle = "Action Required";
+    iconContainer = (
+      <span className="p-3.5 bg-amber-50 rounded-2xl text-amber-600 mb-4 shadow-sm">
+        <AlertTriangle className="h-6 w-6" />
+      </span>
+    );
+    btnVariant = "primary";
+  }
 
   const handleConfirm = () => {
     setModalData(prev => ({ ...prev, isOpen: false }));
@@ -51,7 +96,7 @@ export default function AlertProvider() {
     <Modal
       isOpen={modalData.isOpen}
       onClose={() => setModalData(prev => ({ ...prev, isOpen: false }))}
-      title={isLoginMessage ? "Sign In Required" : isAccessDenied ? "Security Guard" : "Aspirav Notice"}
+      title={modalTitle}
       size="sm"
       footer={
         <div className="flex gap-2.5 w-full justify-end">
@@ -65,7 +110,7 @@ export default function AlertProvider() {
             </Button>
           )}
           <Button
-            variant={isAccessDenied ? "danger" : "primary"}
+            variant={btnVariant}
             size="sm"
             onClick={handleConfirm}
           >
@@ -75,20 +120,7 @@ export default function AlertProvider() {
       }
     >
       <div className="flex flex-col items-center text-center p-3">
-        {isLoginMessage ? (
-          <span className="p-3.5 bg-brand-50 rounded-2xl text-brand-600 mb-4 shadow-sm">
-            <Lock className="h-6 w-6 animate-pulse" />
-          </span>
-        ) : isAccessDenied ? (
-          <span className="p-3.5 bg-danger-50 rounded-2xl text-danger-600 mb-4 shadow-sm animate-bounce">
-            <AlertTriangle className="h-6 w-6" />
-          </span>
-        ) : (
-          <span className="p-3.5 bg-brand-50 rounded-2xl text-brand-500 mb-4 shadow-sm">
-            <GraduationCap className="h-6 w-6" />
-          </span>
-        )}
-        
+        {iconContainer}
         <p className="text-sm font-semibold text-surface-650 leading-relaxed">
           {modalData.message}
         </p>
