@@ -25,10 +25,16 @@ export default function StudentMyPlan() {
   const [activePlan, setActivePlan] = useState<StudyPlan | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [currentDay, setCurrentDay] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // 1. Sync simulation values
-    const planId = localStorage.getItem('active_plan_id') || 'plan-upsc-polity-30';
+    const planId = localStorage.getItem('active_plan_id') || null;
+    if (!planId) {
+      setActivePlan(null);
+      setIsLoading(false);
+      return;
+    }
     const plan = mockPlans.find((p) => p.id === planId);
 
     const planDay = Number(localStorage.getItem(`simulated_current_day_${planId}`) || 1);
@@ -40,6 +46,7 @@ export default function StudentMyPlan() {
       if (plan) {
         setActivePlan(plan);
       }
+      setIsLoading(false);
     }, 0);
   }, []);
 
@@ -50,10 +57,31 @@ export default function StudentMyPlan() {
     setIsPaused(!isPaused);
   };
 
-  if (!activePlan) {
+  if (isLoading) {
     return (
       <Container size="xl" className="py-16 text-center">
-        <h3 className="text-xl font-extrabold text-surface-900 mb-2">Syncing plan roadmap...</h3>
+        <h3 className="text-xl font-extrabold text-surface-900 mb-2">Loading study planner details...</h3>
+      </Container>
+    );
+  }
+
+  if (!activePlan) {
+    return (
+      <Container size="xl" className="py-12">
+        <Card className="border border-surface-200 bg-surface-50 text-center p-12 rounded-3xl flex flex-col items-center gap-4 max-w-2xl mx-auto mt-8">
+          <span className="p-4 bg-brand-50 text-brand-600 rounded-2xl">
+            <Compass className="h-8 w-8 text-brand-500" />
+          </span>
+          <h3 className="text-lg md:text-xl font-black text-surface-900">Your Exam Study Calendar</h3>
+          <p className="text-xs md:text-sm text-surface-500 font-semibold max-w-md">
+            No active study program was found on your account. Choose an exam study plan to unlock your custom syllabus timeline, day-by-day task lists, and tests trackers.
+          </p>
+          <Link href="/study-planner" className="mt-2">
+            <Button size="md" variant="primary" className="font-black px-8">
+              Choose Study Plan
+            </Button>
+          </Link>
+        </Card>
       </Container>
     );
   }

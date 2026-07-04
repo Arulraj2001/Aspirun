@@ -28,8 +28,8 @@ export default function StudentDashboard() {
   const [activePlan, setActivePlan] = useState<StudyPlan | null>(null);
   const [todayTasks, setTodayTasks] = useState<Task[]>([]);
   const [tasksCount, setTasksCount] = useState({ completed: 0, total: 0 });
-  const [streak, setStreak] = useState(5);
-  const [avgScore, setAvgScore] = useState('78.4%');
+  const [streak, setStreak] = useState(0);
+  const [avgScore, setAvgScore] = useState('N/A');
   const [weakTopics, setWeakTopics] = useState<string[]>([]);
   const [recMaterials, setRecMaterials] = useState<StudyMaterial[]>([]);
   const [recTests, setRecTests] = useState<MockTest[]>([]);
@@ -42,87 +42,120 @@ export default function StudentDashboard() {
     const isConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL && 
                          !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project-id');
 
-    // 1. Load active study plan
-    const planId = localStorage.getItem('active_plan_id') || null;
-    const plan = planId ? mockPlans.find((p) => p.id === planId) : null;
-
-    // 2. Load daily checklist
-    let parsedTasks: Task[] = [];
-    let todayList: Task[] = [];
-    let calculatedTasks = { completed: 0, total: 0 };
-    let activeDay = 1;
-
-    if (planId) {
-      const savedTasks = localStorage.getItem(`tasks_db_${planId}`);
-      if (savedTasks) {
-        parsedTasks = JSON.parse(savedTasks);
+    const loadDashboard = async () => {
+      // 1. Resolve Profile Name dynamically first
+      let activeName = 'Aspirant';
+      if (isConfigured) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            const { data } = await supabase
+              .from('profiles')
+              .select('full_name')
+              .eq('id', session.user.id)
+              .maybeSingle();
+            if (data?.full_name) {
+              activeName = data.full_name;
+            } else {
+              const googleName = session.user.user_metadata?.full_name || session.user.user_metadata?.name;
+              if (googleName) {
+                activeName = googleName;
+              } else {
+                activeName = session.user.email?.split('@')[0] || 'Aspirant';
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Failed to load profile name:", err);
+        }
       } else {
-        parsedTasks = mockTasks.filter((t) => t.planId === planId);
+        const saved = localStorage.getItem('simulated_profile');
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (parsed.fullName) {
+              activeName = parsed.fullName;
+            }
+          } catch {}
+        }
+      }
+      setStudentName(activeName);
+
+      // 2. Load active study plan
+      const planId = localStorage.getItem('active_plan_id') || null;
+      const plan = planId ? mockPlans.find((p) => p.id === planId) : null;
+
+      // 3. Load daily checklist
+      let parsedTasks: Task[] = [];
+      let todayList: Task[] = [];
+      let calculatedTasks = { completed: 0, total: 0 };
+      let activeDay = 1;
+
+      if (planId) {
+        const savedTasks = localStorage.getItem(`tasks_db_${planId}`);
+        if (savedTasks) {
+          parsedTasks = JSON.parse(savedTasks);
+        } else {
+          parsedTasks = mockTasks.filter((t) => t.planId === planId);
+        }
+
+        activeDay = parseInt(localStorage.getItem(`current_day_${planId}`) || '1');
+        todayList = parsedTasks.filter((t) => t.dayNumber === activeDay);
+
+        const completedTasks = parsedTasks.filter((t) => t.status === 'completed').length;
+        calculatedTasks = {
+          completed: completedTasks,
+          total: parsedTasks.length
+        };
       }
 
-      activeDay = parseInt(localStorage.getItem(`current_day_${planId}`) || '1');
-      todayList = parsedTasks.filter((t) => t.dayNumber === activeDay);
-
-      const completedTasks = parsedTasks.filter((t) => t.status === 'completed').length;
-      calculatedTasks = {
-        completed: completedTasks,
-        total: parsedTasks.length
-      };
-    }
-
-    // 3. Load mock score logs
-    const savedResults = localStorage.getItem('mockMockResults') || '[]';
-    const parsedResults: MockResult[] = JSON.parse(savedResults);
-    
-    // Average scores
-    let averagePercentage = '78.4%';
-    if (parsedResults.length > 0) {
-      const sum = parsedResults.reduce((acc, curr) => acc + curr.accuracy, 0);
-      averagePercentage = `${Math.round(sum / parsedResults.length)}%`;
-    }
-
-    // 4. Extract weak topics (topics with wrong/skipped responses)
-    const savedQuestions = localStorage.getItem('questions_db') || '[]';
-    const allQuestions: Question[] = JSON.parse(savedQuestions);
-    
-    const weakListSet = new Set<string>();
-    parsedResults.forEach((res) => {
-      const answersSaved = localStorage.getItem(`attempt_answers_${res.id}`) || '{}';
-      const answers = JSON.parse(answersSaved);
+      // 4. Load mock score logs
+      const savedResults = localStorage.getItem('mockMockResults') || '[]';
+      const parsedResults: MockResult[] = JSON.parse(savedResults);
       
-      // Look up questions for this test subject
-      const testQs = allQuestions.filter((q) => q.subject.toLowerCase() === (res.mockTestTitle.includes('GS') ? 'polity' : 'general studies'));
-      testQs.forEach((q) => {
-        const choice = answers[q.id];
-        if (!choice || choice !== q.correctOption) {
-          if (q.topic) weakListSet.add(q.topic);
-        }
+      // Average scores
+      let averagePercentage = 'N/A';
+      if (parsedResults.length > 0) {
+        const sum = parsedResults.reduce((acc, curr) => acc + curr.accuracy, 0);
+        averagePercentage = `${Math.round(sum / parsedResults.length)}%`;
+      }
+
+      // 5. Extract weak topics (topics with wrong/skipped responses)
+      const savedQuestions = localStorage.getItem('questions_db') || '[]';
+      const allQuestions: Question[] = JSON.parse(savedQuestions);
+      
+      const weakListSet = new Set<string>();
+      parsedResults.forEach((res) => {
+        const answersSaved = localStorage.getItem(`attempt_answers_${res.id}`) || '{}';
+        const answers = JSON.parse(answersSaved);
+        
+        // Look up questions for this test subject
+        const testQs = allQuestions.filter((q) => q.subject.toLowerCase() === (res.mockTestTitle.includes('GS') ? 'polity' : 'general studies'));
+        testQs.forEach((q) => {
+          const choice = answers[q.id];
+          if (!choice || choice !== q.correctOption) {
+            if (q.topic) weakListSet.add(q.topic);
+          }
+        });
       });
-    });
 
-    const weakArray = Array.from(weakListSet).slice(0, 3);
-    if (weakArray.length === 0) {
-      // default mock weak topics
-      weakArray.push('Fundamental Rights', 'Preamble', 'Emergency Provisions');
-    }
+      const weakArray = Array.from(weakListSet).slice(0, 3);
 
-    // 5. Query materials recommendations
-    const savedMat = localStorage.getItem('materials_db') || '[]';
-    const parsedMat: StudyMaterial[] = JSON.parse(savedMat);
-    const matchedMat = parsedMat.filter((m) => weakArray.some((topic) => m.subject.toLowerCase().includes(topic.toLowerCase()) || m.title.toLowerCase().includes(topic.toLowerCase()))).slice(0, 2);
+      // 6. Query materials recommendations
+      const savedMat = localStorage.getItem('materials_db') || '[]';
+      const parsedMat: StudyMaterial[] = JSON.parse(savedMat);
+      const matchedMat = parsedMat.filter((m) => weakArray.some((topic) => m.subject.toLowerCase().includes(topic.toLowerCase()) || m.title.toLowerCase().includes(topic.toLowerCase()))).slice(0, 2);
 
-    // 6. Query speed test recommendations
-    const savedTests = localStorage.getItem('mock_tests_db') || '[]';
-    const parsedTests: MockTest[] = JSON.parse(savedTests);
-    const matchedTests = parsedTests.slice(0, 2);
+      // 7. Query speed test recommendations
+      const savedTests = localStorage.getItem('mock_tests_db') || '[]';
+      const parsedTests: MockTest[] = JSON.parse(savedTests);
+      const matchedTests = parsedTests.slice(0, 2);
 
-    // 7. Load community followed thread alerts
-    const savedThreads = localStorage.getItem('community_threads_db') || '[]';
-    const parsedThreads: CommunityPost[] = JSON.parse(savedThreads);
-    const user = 'Siddharth Mishra';
-    const followed = parsedThreads.filter((t) => t.followers?.includes(user) || t.authorName === user).slice(0, 2);
+      // 8. Load community followed thread alerts
+      const savedThreads = localStorage.getItem('community_threads_db') || '[]';
+      const parsedThreads: CommunityPost[] = JSON.parse(savedThreads);
+      const followed = parsedThreads.filter((t) => t.followers?.includes(activeName) || t.authorName === activeName).slice(0, 2);
 
-    setTimeout(() => {
       if (plan) setActivePlan(plan);
       setTodayTasks(todayList);
       setTasksCount(calculatedTasks);
@@ -134,9 +167,11 @@ export default function StudentDashboard() {
       setFollowedThreads(followed.length > 0 ? followed : parsedThreads.slice(0, 2));
       
       // Streak count sync
-      const streakSaved = planId ? (localStorage.getItem('study_streak_count') || '5') : '0';
+      const streakSaved = planId ? (localStorage.getItem('study_streak_count') || '0') : '0';
       setStreak(parseInt(streakSaved));
-    }, 0);
+    };
+
+    loadDashboard();
 
     const checkSubscription = async () => {
       if (isConfigured) {
@@ -176,44 +211,6 @@ export default function StudentDashboard() {
       }
     };
     checkSubscription();
-
-    const loadProfileName = async () => {
-      if (isConfigured) {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user) {
-            const { data } = await supabase
-              .from('profiles')
-              .select('full_name')
-              .eq('id', session.user.id)
-              .single();
-            if (data?.full_name) {
-              setStudentName(data.full_name);
-            } else {
-              const googleName = session.user.user_metadata?.full_name || session.user.user_metadata?.name;
-              if (googleName) {
-                setStudentName(googleName);
-              } else {
-                setStudentName(session.user.email?.split('@')[0] || 'Aspirant');
-              }
-            }
-          }
-        } catch (err) {
-          console.error("Failed to load profile name:", err);
-        }
-      } else {
-        const saved = localStorage.getItem('simulated_profile');
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved);
-            if (parsed.fullName) {
-              setStudentName(parsed.fullName);
-            }
-          } catch {}
-        }
-      }
-    };
-    loadProfileName();
   }, []);
 
   const progressPercent = tasksCount.total > 0 ? (tasksCount.completed / tasksCount.total) * 100 : 0;
@@ -443,11 +440,17 @@ export default function StudentDashboard() {
             </p>
 
             <div className="flex flex-wrap gap-2">
-              {weakTopics.map((topic, i) => (
-                <span key={i} className="text-[10px] font-bold text-danger-700 bg-danger-50 border border-danger-100 px-2 py-0.5 rounded-lg">
-                  {topic}
+              {weakTopics.length === 0 ? (
+                <span className="text-[10px] font-bold text-success-700 bg-success-50 border border-success-100 px-2.5 py-0.5 rounded-lg">
+                  None identified yet. Keep testing!
                 </span>
-              ))}
+              ) : (
+                weakTopics.map((topic, i) => (
+                  <span key={i} className="text-[10px] font-bold text-danger-700 bg-danger-50 border border-danger-100 px-2 py-0.5 rounded-lg">
+                    {topic}
+                  </span>
+                ))
+              )}
             </div>
           </Card>
 

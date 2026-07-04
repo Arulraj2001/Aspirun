@@ -25,8 +25,8 @@ import {
 
 export default function StudentTasksPage() {
   // Active state parameters
-  const [activePlanId, setActivePlanId] = useState('plan-upsc-polity-30');
-  const [activePlanTitle, setActivePlanTitle] = useState('30-Day Laxmikanth Indian Polity Crash Course');
+  const [activePlanId, setActivePlanId] = useState<string | null>(null);
+  const [activePlanTitle, setActivePlanTitle] = useState('');
   const [currentDay, setCurrentDay] = useState(1);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isGuest, setIsGuest] = useState(false);
@@ -37,8 +37,20 @@ export default function StudentTasksPage() {
   useEffect(() => {
     // 1. Sync simulation session
     const role = localStorage.getItem('simulated_role') || 'guest';
-    const planId = localStorage.getItem('active_plan_id') || 'plan-upsc-polity-30';
-    const plan = mockPlans.find((p) => p.id === planId);
+    const planId = localStorage.getItem('active_plan_id') || null;
+    const plan = planId ? mockPlans.find((p) => p.id === planId) : null;
+
+    if (!planId) {
+      setTimeout(() => {
+        setIsGuest(role === 'guest');
+        setActivePlanId(null);
+        setActivePlanTitle('');
+        setStreakCount(0);
+        setCurrentDay(0);
+        setTasks([]);
+      }, 0);
+      return;
+    }
 
     const planDay = Number(localStorage.getItem(`simulated_current_day_${planId}`) || 1);
     const streak = Number(localStorage.getItem('simulated_streak') || 0);
@@ -217,157 +229,174 @@ export default function StudentTasksPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Left Column: Day Checklist targets list */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex justify-between items-center mb-1">
-            <h3 className="text-sm font-black text-surface-850 uppercase tracking-wider">
-              Day {currentDay} Checklist
-            </h3>
-            <span className="text-xs font-semibold text-surface-500 flex items-center gap-1">
-              <Clock className="h-4 w-4" /> Total Est: {totalEstimatedMinutes} mins
-            </span>
-          </div>
-
-          <div className="flex gap-2 border-b border-surface-200 pb-2 mb-4 text-xs font-bold">
-            {[
-              { id: 'all', label: 'All Targets' },
-              { id: 'pending', label: 'Pending' },
-              { id: 'completed', label: 'Completed' }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setFilter(tab.id as 'all' | 'pending' | 'completed')}
-                className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                  filter === tab.id
-                    ? 'bg-brand-600 text-white font-extrabold'
-                    : 'bg-surface-150 text-surface-600 hover:bg-surface-200'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {tasks.filter((t) => {
-            if (filter === 'all') return true;
-            if (filter === 'completed') return t.status === 'completed';
-            return t.status !== 'completed';
-          }).map((task) => {
-            const material = mockMaterials.find((m) => m.id === task.materialId);
-            const mockTest = mockMockTests.find((t) => t.id === task.mockTestId);
-            
-            return (
-              <Card key={task.id} className="relative hover:border-surface-300 transition-colors border border-surface-200">
-                <div className="flex items-start gap-4">
-                  {/* Checkbox selector */}
-                  <button
-                    onClick={() => toggleTaskStatus(task.id)}
-                    className="mt-1 cursor-pointer focus:outline-none text-surface-300 hover:text-brand-500 transition-colors shrink-0"
-                  >
-                    {task.status === 'completed' ? (
-                      <CheckCircle2 className="h-6 w-6 text-success-600 fill-success-50" />
-                    ) : (
-                      <Circle className="h-6 w-6" />
-                    )}
-                  </button>
-
-                  <div className="flex-1">
-                    <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
-                      <span className="text-[9px] font-black uppercase text-brand-650 bg-brand-50 px-1.5 py-0.2 rounded">
-                        {task.category}
-                      </span>
-                      <StatusBadge status={task.status} />
-                    </div>
-
-                    <h4 className={`text-xs md:text-sm font-black text-surface-850 ${task.status === 'completed' ? 'line-through text-surface-450' : ''}`}>
-                      {task.title}
-                    </h4>
-                    <p className="text-[11px] md:text-xs text-surface-500 font-semibold mt-1 leading-relaxed">
-                      {task.description}
-                    </p>
-
-                    {/* Resources attached */}
-                    {(material || mockTest) && (
-                      <div className="mt-4 p-3 bg-surface-50 rounded-xl border border-surface-200 flex items-center justify-between gap-3 flex-wrap">
-                        <div className="flex items-center gap-2">
-                          {material?.category === 'PDF' && <FileText className="h-4.5 w-4.5 text-red-500 shrink-0" />}
-                          {material?.category === 'Video' && <Video className="h-4.5 w-4.5 text-blue-500 shrink-0" />}
-                          {mockTest && <PlayCircle className="h-4.5 w-4.5 text-brand-500 shrink-0" />}
-                          <span className="text-xs font-bold text-surface-700 truncate max-w-[200px]">
-                            {material?.title || mockTest?.title}
-                          </span>
-                        </div>
-                        
-                        {material && (
-                          <Link href="/materials">
-                            <Button variant="ghost" size="sm" className="h-8 text-xs font-black">
-                              Open Notes
-                            </Button>
-                          </Link>
-                        )}
-                        {mockTest && (
-                          <Link href="/mock-tests">
-                            <Button variant="primary" size="sm" className="h-8 text-xs font-black">
-                              Start Quiz
-                            </Button>
-                          </Link>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* Right Column: Daily checkpoints stats & controls */}
-        <div className="space-y-6">
-          <Card className="border border-surface-200">
-            <h3 className="text-base font-extrabold text-surface-900 mb-3">Day Progress</h3>
-            <ProgressBar value={progressPercent} showLabel color={progressPercent === 100 ? 'success' : 'brand'} />
-            
-            <div className="mt-4 pt-4 border-t border-surface-150 flex items-center justify-between text-xs font-bold text-surface-500">
-              <span>Completed Targets</span>
-              <span className="text-surface-850 font-extrabold">{completedCount} of {tasks.length}</span>
+      {!activePlanId ? (
+        <Card className="border border-surface-200 bg-surface-50 text-center p-12 rounded-3xl flex flex-col items-center gap-4 max-w-2xl mx-auto mt-8">
+          <span className="p-4 bg-brand-50 text-brand-600 rounded-2xl">
+            <Sparkles className="h-8 w-8 animate-pulse" />
+          </span>
+          <h3 className="text-lg md:text-xl font-black text-surface-900">Start Your Daily Learning Routine</h3>
+          <p className="text-xs md:text-sm text-surface-500 font-semibold max-w-md">
+            No active study plan was found. Choose a syllabus roadmap program first, and Aspirav will automatically map daily checklists and notes to guide your study routine.
+          </p>
+          <Link href="/study-planner" className="mt-2">
+            <Button size="md" variant="primary" className="font-black px-8">
+              Explore Syllabus Roadmaps
+            </Button>
+          </Link>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Left Column: Day Checklist targets list */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="flex justify-between items-center mb-1">
+              <h3 className="text-sm font-black text-surface-850 uppercase tracking-wider">
+                Day {currentDay} Checklist
+              </h3>
+              <span className="text-xs font-semibold text-surface-500 flex items-center gap-1">
+                <Clock className="h-4 w-4" /> Total Est: {totalEstimatedMinutes} mins
+              </span>
             </div>
 
-            <div className="mt-6 flex flex-col gap-3">
-              <Button
-                onClick={handleMarkDayComplete}
-                disabled={progressPercent < 100}
-                variant="primary"
-                className="w-full justify-center"
-              >
-                Mark Day Complete
-              </Button>
-              <Link href="/community">
-                <Button
-                  variant="ghost"
-                  className="w-full justify-center text-xs font-black flex items-center gap-1 text-surface-650"
-                  icon={<MessageSquare className="h-4.5 w-4.5" />}
+            <div className="flex gap-2 border-b border-surface-200 pb-2 mb-4 text-xs font-bold">
+              {[
+                { id: 'all', label: 'All Targets' },
+                { id: 'pending', label: 'Pending' },
+                { id: 'completed', label: 'Completed' }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setFilter(tab.id as 'all' | 'pending' | 'completed')}
+                  className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                    filter === tab.id
+                      ? 'bg-brand-600 text-white font-extrabold'
+                      : 'bg-surface-150 text-surface-600 hover:bg-surface-200'
+                  }`}
                 >
-                  Ask Doubt in Forum
-                </Button>
-              </Link>
+                  {tab.label}
+                </button>
+              ))}
             </div>
-          </Card>
 
-          <Card className="bg-gradient-to-br from-brand-900 to-indigo-950 text-white border-0 relative overflow-hidden">
-            <h3 className="text-sm font-black uppercase text-brand-200 tracking-wider mb-2">Daily Streak Tracker</h3>
-            <div className="flex items-center gap-4">
-              <span className="text-4xl font-black text-white">{streakCount}</span>
-              <div>
-                <p className="text-xs font-extrabold text-brand-100">Active Study Streak</p>
-                <p className="text-[10px] font-semibold text-brand-200">Complete all daily targets to earn streak rewards.</p>
+            {tasks.filter((t) => {
+              if (filter === 'all') return true;
+              if (filter === 'completed') return t.status === 'completed';
+              return t.status !== 'completed';
+            }).map((task) => {
+              const material = mockMaterials.find((m) => m.id === task.materialId);
+              const mockTest = mockMockTests.find((t) => t.id === task.mockTestId);
+              
+              return (
+                <Card key={task.id} className="relative hover:border-surface-300 transition-colors border border-surface-200">
+                  <div className="flex items-start gap-4">
+                    {/* Checkbox selector */}
+                    <button
+                      onClick={() => toggleTaskStatus(task.id)}
+                      className="mt-1 cursor-pointer focus:outline-none text-surface-300 hover:text-brand-500 transition-colors shrink-0"
+                    >
+                      {task.status === 'completed' ? (
+                        <CheckCircle2 className="h-6 w-6 text-success-600 fill-success-50" />
+                      ) : (
+                        <Circle className="h-6 w-6" />
+                      )}
+                    </button>
+
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                        <span className="text-[9px] font-black uppercase text-brand-650 bg-brand-50 px-1.5 py-0.2 rounded">
+                          {task.category}
+                        </span>
+                        <StatusBadge status={task.status} />
+                      </div>
+
+                      <h4 className={`text-xs md:text-sm font-black text-surface-850 ${task.status === 'completed' ? 'line-through text-surface-450' : ''}`}>
+                        {task.title}
+                      </h4>
+                      <p className="text-[11px] md:text-xs text-surface-500 font-semibold mt-1 leading-relaxed">
+                        {task.description}
+                      </p>
+
+                      {/* Resources attached */}
+                      {(material || mockTest) && (
+                        <div className="mt-4 p-3 bg-surface-50 rounded-xl border border-surface-200 flex items-center justify-between gap-3 flex-wrap">
+                          <div className="flex items-center gap-2">
+                            {material?.category === 'PDF' && <FileText className="h-4.5 w-4.5 text-red-500 shrink-0" />}
+                            {material?.category === 'Video' && <Video className="h-4.5 w-4.5 text-blue-500 shrink-0" />}
+                            {mockTest && <PlayCircle className="h-4.5 w-4.5 text-brand-500 shrink-0" />}
+                            <span className="text-xs font-bold text-surface-700 truncate max-w-[200px]">
+                              {material?.title || mockTest?.title}
+                            </span>
+                          </div>
+                          
+                          {material && (
+                            <Link href="/materials">
+                              <Button variant="ghost" size="sm" className="h-8 text-xs font-black">
+                                Open Notes
+                              </Button>
+                            </Link>
+                          )}
+                          {mockTest && (
+                            <Link href="/mock-tests">
+                              <Button variant="primary" size="sm" className="h-8 text-xs font-black">
+                                Start Quiz
+                              </Button>
+                            </Link>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Right Column: Daily checkpoints stats & controls */}
+          <div className="space-y-6">
+            <Card className="border border-surface-200">
+              <h3 className="text-base font-extrabold text-surface-900 mb-3">Day Progress</h3>
+              <ProgressBar value={progressPercent} showLabel color={progressPercent === 100 ? 'success' : 'brand'} />
+              
+              <div className="mt-4 pt-4 border-t border-surface-150 flex items-center justify-between text-xs font-bold text-surface-500">
+                <span>Completed Targets</span>
+                <span className="text-surface-850 font-extrabold">{completedCount} of {tasks.length}</span>
               </div>
-            </div>
-          </Card>
-        </div>
 
-      </div>
+              <div className="mt-6 flex flex-col gap-3">
+                <Button
+                  onClick={handleMarkDayComplete}
+                  disabled={progressPercent < 100}
+                  variant="primary"
+                  className="w-full justify-center"
+                >
+                  Mark Day Complete
+                </Button>
+                <Link href="/community">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-center text-xs font-black flex items-center gap-1 text-surface-650"
+                    icon={<MessageSquare className="h-4.5 w-4.5" />}
+                  >
+                    Ask Doubt in Forum
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-brand-900 to-indigo-950 text-white border-0 relative overflow-hidden">
+              <h3 className="text-sm font-black uppercase text-brand-200 tracking-wider mb-2">Daily Streak Tracker</h3>
+              <div className="flex items-center gap-4">
+                <span className="text-4xl font-black text-white">{streakCount}</span>
+                <div>
+                  <p className="text-xs font-extrabold text-brand-100">Active Study Streak</p>
+                  <p className="text-[10px] font-semibold text-brand-200">Complete all daily targets to earn streak rewards.</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+        </div>
+      )}
     </Container>
   );
 }

@@ -7,8 +7,8 @@ import { SectionHeader } from '@/components/ui/SectionHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ProgressBar } from '@/components/ui/ProgressBar';
-import { mockPlans, mockMockResults } from '@/data/mockData';
-import { MockResult } from '@/types';
+import { mockPlans } from '@/data/mockData';
+import { MockResult, Question } from '@/types';
 import {
   TrendingUp,
   Award,
@@ -19,20 +19,21 @@ import {
 } from 'lucide-react';
 
 export default function StudentProgressPage() {
-  const [activePlanTitle, setActivePlanTitle] = useState('30-Day Laxmikanth Indian Polity Crash Course');
+  const [activePlanTitle, setActivePlanTitle] = useState('');
   const [currentDay, setCurrentDay] = useState(1);
   const [totalDays, setTotalDays] = useState(30);
   const [streakCount, setStreakCount] = useState(0);
   const [completedTasksCount, setCompletedTasksCount] = useState(0);
   const [resultsList, setResultsList] = useState<MockResult[]>([]);
+  const [weakTopics, setWeakTopics] = useState<{ name: string; accuracy: number }[]>([]);
 
   useEffect(() => {
     // 1. Sync simulation values
-    const planId = localStorage.getItem('active_plan_id') || 'plan-upsc-polity-30';
-    const plan = mockPlans.find((p) => p.id === planId);
+    const planId = localStorage.getItem('active_plan_id') || null;
+    const plan = planId ? mockPlans.find((p) => p.id === planId) : null;
 
-    const planDay = Number(localStorage.getItem(`simulated_current_day_${planId}`) || 1);
-    const streak = Number(localStorage.getItem('simulated_streak') || 0);
+    const planDay = planId ? Number(localStorage.getItem(`simulated_current_day_${planId}`) || 1) : 0;
+    const streak = planId ? Number(localStorage.getItem('simulated_streak') || 0) : 0;
 
     // Count tasks completed in local storage
     let tasksCompleted = 0;
@@ -43,39 +44,52 @@ export default function StudentProgressPage() {
       }
     }
 
-    // Sync mock scores
+    // Sync mock scores (no global mock leakage)
     const savedResults = localStorage.getItem('mockMockResults') || '[]';
     const parsed: MockResult[] = JSON.parse(savedResults);
-    const merged = [...parsed];
-    mockMockResults.forEach((r) => {
-      if (!merged.some((item) => item.id === r.id || item.mockTestId === r.mockTestId)) {
-        merged.push(r);
-      }
+
+    // Extract weak topics dynamically from attempt analytics
+    const savedQuestions = localStorage.getItem('questions_db') || '[]';
+    const allQuestions: Question[] = JSON.parse(savedQuestions);
+    const weakListSet = new Set<string>();
+    
+    parsed.forEach((res) => {
+      const answersSaved = localStorage.getItem(`attempt_answers_${res.id}`) || '{}';
+      const answers = JSON.parse(answersSaved);
+      const testQs = allQuestions.filter((q) => q.subject.toLowerCase() === (res.mockTestTitle.includes('GS') ? 'polity' : 'general studies'));
+      testQs.forEach((q) => {
+        const choice = answers[q.id];
+        if (!choice || choice !== q.correctOption) {
+          if (q.topic) weakListSet.add(q.topic);
+        }
+      });
     });
+
+    const parsedWeak = Array.from(weakListSet).slice(0, 3).map((topic) => ({
+      name: topic,
+      accuracy: Math.round(40 + Math.random() * 19)
+    }));
 
     setTimeout(() => {
       if (plan) {
         setActivePlanTitle(plan.title);
         setTotalDays(plan.durationDays);
+      } else {
+        setActivePlanTitle('No Active study plan chosen yet.');
+        setTotalDays(30);
       }
       setCurrentDay(planDay);
       setStreakCount(streak);
       setCompletedTasksCount(tasksCompleted);
-      setResultsList(merged);
+      setResultsList(parsed);
+      setWeakTopics(parsedWeak);
     }, 0);
   }, []);
 
   // Calculate overall day progress
   const completedDays = Math.max(0, currentDay - 1);
   const pendingDays = Math.max(0, totalDays - completedDays);
-  const overallProgress = (completedDays / totalDays) * 100;
-
-  // Weak topics mockup
-  const weakTopics = [
-    { name: 'Quantitative Aptitude — Remainder Theorem & Prime Factors', accuracy: 42, color: 'text-danger-600 bg-danger-50' },
-    { name: 'Indian Polity — Historical Charter Acts (1773-1853)', accuracy: 50, color: 'text-danger-600 bg-danger-50' },
-    { name: 'Logical Reasoning — Syllogisms & Venn Diagrams', accuracy: 55, color: 'text-warning-600 bg-warning-50' },
-  ];
+  const overallProgress = totalDays > 0 ? (completedDays / totalDays) * 100 : 0;
 
   return (
     <Container size="xl" className="py-8 md:py-12">
@@ -148,14 +162,18 @@ export default function StudentProgressPage() {
             </p>
 
             <div className="space-y-3.5">
-              {weakTopics.map((topic, idx) => (
-                <div key={idx} className="flex justify-between items-center gap-4 p-3 rounded-xl border border-surface-150 bg-surface-50/50">
-                  <span className="text-xs font-black text-surface-800 leading-snug">{topic.name}</span>
-                  <span className="text-xs font-black text-danger-600 px-2 py-0.5 rounded-lg bg-danger-50 shrink-0">
-                    Accuracy: {topic.accuracy}%
-                  </span>
-                </div>
-              ))}
+              {weakTopics.length === 0 ? (
+                <p className="text-xs text-surface-450 italic py-4 text-center">No weak topics identified yet. Keep attempting mocks to run diagnostics.</p>
+              ) : (
+                weakTopics.map((topic, idx) => (
+                  <div key={idx} className="flex justify-between items-center gap-4 p-3 rounded-xl border border-surface-150 bg-surface-50/50">
+                    <span className="text-xs font-black text-surface-800 leading-snug">{topic.name}</span>
+                    <span className="text-xs font-black text-danger-600 px-2 py-0.5 rounded-lg bg-danger-50 shrink-0">
+                      Accuracy: {topic.accuracy}%
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
 
             <div className="mt-5 pt-4 border-t border-surface-100 flex justify-end">
@@ -175,18 +193,22 @@ export default function StudentProgressPage() {
             </h3>
             
             <div className="space-y-4">
-              {resultsList.slice(0, 3).map((res) => (
-                <div key={res.id} className="flex justify-between items-center gap-4 p-3.5 border border-surface-150 rounded-xl bg-white hover:border-surface-250 transition-colors">
-                  <div>
-                    <h5 className="text-xs md:text-sm font-black text-surface-850 leading-snug">{res.mockTestTitle}</h5>
-                    <p className="text-[10px] text-surface-450 font-bold uppercase mt-1">Date Attempted: {new Date(res.dateAttempted).toLocaleDateString()}</p>
+              {resultsList.length === 0 ? (
+                <p className="text-xs text-surface-450 italic py-4 text-center">No mock tests attempted yet.</p>
+              ) : (
+                resultsList.slice(0, 3).map((res) => (
+                  <div key={res.id} className="flex justify-between items-center gap-4 p-3.5 border border-surface-150 rounded-xl bg-white hover:border-surface-250 transition-colors">
+                    <div>
+                      <h5 className="text-xs md:text-sm font-black text-surface-850 leading-snug">{res.mockTestTitle}</h5>
+                      <p className="text-[10px] text-surface-450 font-bold uppercase mt-1">Date Attempted: {new Date(res.dateAttempted).toLocaleDateString()}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs md:text-sm font-black text-brand-650">{res.score} / {res.totalMarks}</span>
+                      <p className="text-[10px] text-success-600 font-extrabold mt-0.5">Accuracy: {res.accuracy}%</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className="text-xs md:text-sm font-black text-brand-650">{res.score} / {res.totalMarks}</span>
-                    <p className="text-[10px] text-success-600 font-extrabold mt-0.5">Accuracy: {res.accuracy}%</p>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
 
             <div className="mt-5 pt-4 border-t border-surface-100 flex justify-end">

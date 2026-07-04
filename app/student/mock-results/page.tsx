@@ -7,7 +7,7 @@ import { SectionHeader } from '@/components/ui/SectionHeader';
 import { Card } from '@/components/ui/Card';
 import { StatCard } from '@/components/ui/StatCard';
 import { Button } from '@/components/ui/Button';
-import { mockMockResults } from '@/data/mockData';
+
 import { MockResult } from '@/types';
 import { Award, Percent, BarChart, Calendar, ChevronRight, AlertCircle } from 'lucide-react';
 
@@ -18,16 +18,8 @@ export default function StudentMockResults() {
     const saved = localStorage.getItem('mockMockResults') || '[]';
     const parsed: MockResult[] = JSON.parse(saved);
     
-    // Merge custom attempts with mock mock data logs
-    const merged = [...parsed];
-    mockMockResults.forEach((mockItem) => {
-      if (!merged.some((item) => item.id === mockItem.id || item.mockTestId === mockItem.mockTestId)) {
-        merged.push(mockItem);
-      }
-    });
-
     setTimeout(() => {
-      setResults(merged);
+      setResults(parsed);
     }, 0);
   }, []);
 

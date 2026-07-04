@@ -18,12 +18,7 @@ export default function SavedMaterialsPage() {
     // 1. Fetch bookmarks list from local storage
     const savedIds = JSON.parse(localStorage.getItem('saved_materials_ids') || '[]');
     
-    // Fallback default save bookmarks for demonstration if empty
-    let finalIds = savedIds;
-    if (savedIds.length === 0) {
-      finalIds = ['mat-1', 'mat-2'];
-      localStorage.setItem('saved_materials_ids', JSON.stringify(finalIds));
-    }
+    const finalIds = savedIds;
 
     // 2. Fetch full materials db
     const savedMat = localStorage.getItem('materials_db');
