@@ -11,6 +11,8 @@ import { Select } from '@/components/ui/Select';
 import { ExamBadge } from '@/components/ui/ExamBadge';
 import { DifficultyBadge } from '@/components/ui/DifficultyBadge';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { LoginPrompt } from '@/components/ui/LoginPrompt';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { mockPlans, mockExams } from '@/data/mockData';
 import { Calendar, Compass, Search, Filter, RefreshCw, GraduationCap } from 'lucide-react';
 import { LoadingState } from '@/components/ui/LoadingState';
@@ -19,6 +21,7 @@ function PlannerContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialExamSlug = searchParams?.get('exam') || 'all';
+  const { isLoggedIn } = useAuth();
 
   // Filters State
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,6 +30,7 @@ function PlannerContent() {
   const [duration, setDuration] = useState('all');
   const [pricing, setPricing] = useState('all');
   const [activePlanId, setActivePlanId] = useState<string | null>(null);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   useEffect(() => {
     // Sync active plan enrolment
@@ -62,7 +66,10 @@ function PlannerContent() {
     }
 
     localStorage.setItem('active_plan_id', planId);
-    localStorage.setItem('simulated_role', 'student');
+    if (!isLoggedIn) {
+      setShowLoginPrompt(true);
+      return;
+    }
     router.push('/student/dashboard');
   };
 

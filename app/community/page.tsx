@@ -5,17 +5,21 @@ import Link from 'next/link';
 import { Container } from '@/components/ui/Container';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { LoginPrompt } from '@/components/ui/LoginPrompt';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { mockCommunityPosts } from '@/data/mockData';
 import { CommunityPost } from '@/types';
 import {
   MessageSquare,
   ThumbsUp,
   ShieldAlert,
-  ArrowRight
+  ArrowRight,
+  PlusCircle,
 } from 'lucide-react';
 
 export default function CommunityHomepage() {
   const [trendingThreads, setTrendingThreads] = useState<CommunityPost[]>([]);
+  const { isLoggedIn } = useAuth();
 
   useEffect(() => {
 

@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase/client';
-import { LoadingState } from '@/components/ui/LoadingState';
+import React, { useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { GraduationCap } from 'lucide-react';
 
 export default function StudentLayout({
   children,
@@ -11,92 +11,34 @@ export default function StudentLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [authorized, setAuthorized] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const pathname = usePathname();
+  const { isLoggedIn, isLoading } = useAuth();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      // 1. Try real Supabase auth if keys are configured
-      const isConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL && 
-                           !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project-id');
-      
-      if (isConfigured) {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (!session) {
-            // Check if there is an active local storage auth token that is currently synchronizing/recovering
-            let hasToken = false;
-            for (let i = 0; i < localStorage.length; i++) {
-              const key = localStorage.key(i);
-              if (key?.startsWith('sb-') && key.endsWith('-auth-token')) {
-                hasToken = true;
-                break;
-              }
-            }
+    if (!isLoading && !isLoggedIn) {
+      // Silent redirect — no alert popups
+      router.push(`/login?redirect=${encodeURIComponent(pathname || '/student/dashboard')}`);
+    }
+  }, [isLoading, isLoggedIn, router, pathname]);
 
-            if (hasToken) {
-              // Wait 1.5s to let Supabase client complete clock-skew resolution or background refresh
-              await new Promise((resolve) => setTimeout(resolve, 1500));
-              const { data: { session: retriedSession } } = await supabase.auth.getSession();
-              if (retriedSession) {
-                setAuthorized(true);
-                setLoading(false);
-                return;
-              }
-            }
-
-            alert('Please login to continue.');
-            router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
-            return;
-          }
-          
-          // Get profile role
-          const { data: profile } = await supabase
-              .from('profiles')
-              .select('role')
-              .eq('id', session.user.id)
-              .single();
-
-          if (profile?.role === 'admin') {
-            // Admin is allowed to access student views for testing
-            setAuthorized(true);
-            return;
-          }
-
-          setAuthorized(true);
-        } catch (err) {
-          console.error('Supabase auth check failed, falling back:', err);
-          checkSimulatedAuth();
-        }
-      } else {
-        // 2. Offline Simulation Fallback
-        checkSimulatedAuth();
-      }
-      
-      setLoading(false);
-    };
-
-    const checkSimulatedAuth = () => {
-      const role = localStorage.getItem('simulated_role') || 'guest';
-      if (role === 'guest') {
-        alert('Please login to continue.');
-        router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
-      } else {
-        // Both student and admin are authorized
-        setAuthorized(true);
-      }
-    };
-
-    checkAuth();
-  }, [router]);
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface-50">
-        <LoadingState message="Verifying student credentials..." />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-surface-50 gap-4">
+        <div className="p-3 bg-brand-500 rounded-2xl animate-pulse">
+          <GraduationCap className="h-8 w-8 text-white" />
+        </div>
+        <div className="space-y-2 text-center">
+          <div className="h-4 w-40 bg-surface-200 rounded-lg animate-pulse mx-auto" />
+          <div className="h-3 w-28 bg-surface-100 rounded-lg animate-pulse mx-auto" />
+        </div>
       </div>
     );
   }
 
-  return authorized ? <>{children}</> : null;
+  if (!isLoggedIn) {
+    // Render nothing while redirect is in-flight
+    return null;
+  }
+
+  return <>{children}</>;
 }

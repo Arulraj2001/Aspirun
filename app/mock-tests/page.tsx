@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Container } from '@/components/ui/Container';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { Card } from '@/components/ui/Card';
@@ -11,18 +11,23 @@ import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
 import { DifficultyBadge } from '@/components/ui/DifficultyBadge';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { LoginPrompt } from '@/components/ui/LoginPrompt';
 import { mockExams, mockMockTests } from '@/data/mockData';
 import { MockTest } from '@/types';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { FileQuestion, Clock, Award, PlayCircle, Search, AlertCircle, Lock } from 'lucide-react';
 
 export default function MockTestsPage() {
   const router = useRouter();
+  const pathname = usePathname();
+  const { isLoggedIn } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [examId, setExamId] = useState('all');
   const [subject, setSubject] = useState('all');
   const [type, setType] = useState('all');
   const [difficulty, setDifficulty] = useState('all');
   const [pricing, setPricing] = useState('all');
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   const [mockTests, setMockTests] = useState<MockTest[]>([]);
   const [selectedMock, setSelectedMock] = useState<MockTest | null>(null);
@@ -48,13 +53,13 @@ export default function MockTestsPage() {
 
   const handleStartMock = () => {
     if (!selectedMock) return;
-    const role = localStorage.getItem('simulated_role') || 'guest';
-    if (role === 'guest') {
-      alert('Please login to continue.');
+    if (!isLoggedIn) {
+      setIsModalOpen(false);
+      setShowLoginPrompt(true);
       return;
     }
     setIsModalOpen(false);
-    // Redirect to attempt start route
+    setShowLoginPrompt(false);
     const testSlug = selectedMock.slug || selectedMock.id;
     window.location.href = `/mock-tests/${testSlug}/start`;
   };
@@ -97,6 +102,15 @@ export default function MockTestsPage() {
         title="Mock Tests & Sectional Quizzes"
         subtitle="Practice high-quality mock questions patterned after latest paper designs to enhance your speed and accuracy."
       />
+
+      {showLoginPrompt && (
+        <LoginPrompt
+          action="attempt this mock test and save your score"
+          redirectPath="/mock-tests"
+          variant="inline"
+          className="mb-6"
+        />
+      )}
 
       {/* Toolbar filters grid */}
       <Card className="border border-surface-200 mb-8 bg-surface-50/50">
