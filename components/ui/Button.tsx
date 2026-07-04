@@ -23,21 +23,28 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    const baseStyles = 'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 cursor-pointer focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed';
-    
+    const baseStyles =
+      'inline-flex items-center justify-center font-bold rounded-xl transition-all duration-200 cursor-pointer focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed select-none';
+
     const variants = {
-      primary: 'bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white shadow-sm shadow-brand-500/10 border border-brand-600',
-      secondary: 'bg-brand-50 hover:bg-brand-100 active:bg-brand-200 text-brand-700 border border-brand-100',
-      outline: 'bg-white hover:bg-surface-50 active:bg-surface-100 text-surface-800 border border-surface-200',
-      ghost: 'bg-transparent hover:bg-surface-50 active:bg-surface-100 text-surface-800',
-      success: 'bg-success-600 hover:bg-success-700 active:bg-success-700 text-white border border-success-700 shadow-sm shadow-success-600/10',
-      danger: 'bg-danger-600 hover:bg-danger-700 active:bg-danger-700 text-white border border-danger-700 shadow-sm shadow-danger-600/10',
+      primary:
+        'bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white shadow-sm shadow-brand-500/20 border border-brand-600 hover:shadow-md hover:shadow-brand-500/25 hover:-translate-y-0.5',
+      secondary:
+        'bg-brand-50 hover:bg-brand-100 active:bg-brand-200 text-brand-700 border border-brand-200 hover:border-brand-300',
+      outline:
+        'bg-white hover:bg-surface-75 active:bg-surface-100 text-surface-800 border border-surface-200 hover:border-surface-300 shadow-sm',
+      ghost:
+        'bg-transparent hover:bg-surface-100 active:bg-surface-150 text-surface-700',
+      success:
+        'bg-success-600 hover:bg-success-700 active:bg-success-800 text-white border border-success-700 shadow-sm shadow-success-600/15 hover:-translate-y-0.5',
+      danger:
+        'bg-danger-600 hover:bg-danger-700 active:bg-danger-700 text-white border border-danger-700 shadow-sm shadow-danger-600/15 hover:-translate-y-0.5',
     };
 
     const sizes = {
-      sm: 'px-3 py-1.5 text-xs md:text-sm font-semibold rounded-lg',
-      md: 'px-5 py-2.5 text-sm md:text-base font-semibold',
-      lg: 'px-6 py-3.5 text-base md:text-lg font-bold rounded-2xl w-full md:w-auto',
+      sm: 'px-3 py-1.5 text-xs font-bold rounded-lg gap-1.5',
+      md: 'px-5 py-2.5 text-sm font-bold gap-2',
+      lg: 'px-7 py-3.5 text-base font-black rounded-2xl gap-2.5',
     };
 
     return (
@@ -49,19 +56,12 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       >
         {isLoading && (
           <svg
-            className="animate-spin -ml-1 mr-2 h-4 w-4 text-current"
+            className="animate-spin h-4 w-4 text-current shrink-0"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
           >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path
               className="opacity-75"
               fill="currentColor"
@@ -70,11 +70,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           </svg>
         )}
         {!isLoading && icon && iconPosition === 'left' && (
-          <span className="mr-2 inline-flex">{icon}</span>
+          <span className="inline-flex shrink-0">{icon}</span>
         )}
         {children}
         {!isLoading && icon && iconPosition === 'right' && (
-          <span className="ml-2 inline-flex">{icon}</span>
+          <span className="inline-flex shrink-0">{icon}</span>
         )}
       </button>
     );

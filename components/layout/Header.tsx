@@ -95,7 +95,7 @@ export const Header: React.FC = () => {
     : user?.email?.[0]?.toUpperCase() || 'A';
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-white/90 backdrop-blur-md border-b border-surface-200 shadow-sm">
+    <header className="sticky top-0 z-40 w-full backdrop-blur-md border-b border-surface-200/80 shadow-sm" style={{ backgroundColor: 'rgba(255,255,255,0.88)' }}>
       <Container size="xl">
         <div className="flex h-16 items-center justify-between gap-4">
 

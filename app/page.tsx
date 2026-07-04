@@ -151,11 +151,20 @@ export default function Home() {
       />
 
       {/* 1. Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-brand-50 to-white py-16 md:py-24 border-b border-surface-200">
+      <section className="relative overflow-hidden py-16 md:py-24 border-b border-surface-200" style={{
+        background: 'linear-gradient(160deg, #f0fdfa 0%, #e6f7f5 35%, #eef2f7 70%, #f0f4f8 100%)',
+      }}>
+        {/* Decorative background orbs */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -top-24 -left-24 h-96 w-96 rounded-full opacity-40 blur-3xl" style={{ background: 'radial-gradient(circle, rgba(13,148,136,0.18) 0%, transparent 70%)' }} />
+          <div className="absolute top-10 right-0 h-80 w-80 rounded-full opacity-30 blur-3xl" style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.14) 0%, transparent 70%)' }} />
+          <div className="absolute bottom-0 left-1/3 h-64 w-64 rounded-full opacity-25 blur-2xl" style={{ background: 'radial-gradient(circle, rgba(13,148,136,0.15) 0%, transparent 70%)' }} />
+        </div>
+
         <Container size="xl" className="relative z-10 flex flex-col items-center text-center">
           
           {/* Tagline Badge */}
-          <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-black bg-brand-100 text-brand-700 uppercase tracking-widest mb-6 border border-brand-200">
+          <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-black bg-brand-100 text-brand-700 uppercase tracking-widest mb-6 border border-brand-200 shadow-sm">
             <Sparkles className="h-3.5 w-3.5 fill-brand-200 text-brand-700" />
             Empowering govt exam aspirants
           </span>
@@ -291,7 +300,7 @@ export default function Home() {
       </section>
 
       {/* 5. Popular Study Plans */}
-      <section className="py-16 bg-surface-50 border-b border-surface-200">
+      <section className="py-16 border-b border-surface-200" style={{ backgroundColor: 'var(--page-bg)' }}>
         <Container size="xl">
           <div className="text-center max-w-xl mx-auto mb-12">
             <h2 className="text-xl md:text-3xl font-black text-surface-900 tracking-tight">Popular Study Plans</h2>

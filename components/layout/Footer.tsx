@@ -26,7 +26,7 @@ export const Footer: React.FC = () => {
   ];
 
   return (
-    <footer className="w-full bg-white border-t border-surface-200 mt-auto py-8 md:py-12">
+    <footer className="w-full border-t border-surface-200 mt-auto py-10 md:py-14" style={{ background: 'linear-gradient(160deg, #f8fafc 0%, #eef2f7 100%)' }}>
       <Container size="xl">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 pb-6 border-b border-surface-100">
           
