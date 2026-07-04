@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
+import AlertProvider from "@/components/providers/AlertProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,6 +39,7 @@ export default function RootLayout({
         </main>
         <Footer />
         <MobileBottomNav />
+        <AlertProvider />
       </body>
     </html>
   );
