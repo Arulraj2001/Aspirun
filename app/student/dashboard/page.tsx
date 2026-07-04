@@ -36,35 +36,39 @@ export default function StudentDashboard() {
   const [recentResults, setRecentResults] = useState<MockResult[]>([]);
   const [followedThreads, setFollowedThreads] = useState<CommunityPost[]>([]);
   const [activeSubscription, setActiveSubscription] = useState<{ name: string; ends_at: string } | null>(null);
-  const [studentName, setStudentName] = useState('Siddharth');
+  const [studentName, setStudentName] = useState('Aspirant');
 
   useEffect(() => {
     const isConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL && 
                          !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project-id');
 
     // 1. Load active study plan
-    const planId = localStorage.getItem('active_plan_id') || 'plan-upsc-polity-30';
-    const plan = mockPlans.find((p) => p.id === planId);
+    const planId = localStorage.getItem('active_plan_id') || null;
+    const plan = planId ? mockPlans.find((p) => p.id === planId) : null;
 
     // 2. Load daily checklist
-    const savedTasks = localStorage.getItem(`tasks_db_${planId}`);
     let parsedTasks: Task[] = [];
-    if (savedTasks) {
-      parsedTasks = JSON.parse(savedTasks);
-    } else {
-      parsedTasks = mockTasks.filter((t) => t.planId === planId);
+    let todayList: Task[] = [];
+    let calculatedTasks = { completed: 0, total: 0 };
+    let activeDay = 1;
+
+    if (planId) {
+      const savedTasks = localStorage.getItem(`tasks_db_${planId}`);
+      if (savedTasks) {
+        parsedTasks = JSON.parse(savedTasks);
+      } else {
+        parsedTasks = mockTasks.filter((t) => t.planId === planId);
+      }
+
+      activeDay = parseInt(localStorage.getItem(`current_day_${planId}`) || '1');
+      todayList = parsedTasks.filter((t) => t.dayNumber === activeDay);
+
+      const completedTasks = parsedTasks.filter((t) => t.status === 'completed').length;
+      calculatedTasks = {
+        completed: completedTasks,
+        total: parsedTasks.length
+      };
     }
-
-    // Determine current active day
-    const activeDay = parseInt(localStorage.getItem(`current_day_${planId}`) || '1');
-    const todayList = parsedTasks.filter((t) => t.dayNumber === activeDay);
-
-    // Calc totals
-    const completedTasks = parsedTasks.filter((t) => t.status === 'completed').length;
-    const calculatedTasks = {
-      completed: completedTasks,
-      total: parsedTasks.length
-    };
 
     // 3. Load mock score logs
     const savedResults = localStorage.getItem('mockMockResults') || '[]';
@@ -130,7 +134,7 @@ export default function StudentDashboard() {
       setFollowedThreads(followed.length > 0 ? followed : parsedThreads.slice(0, 2));
       
       // Streak count sync
-      const streakSaved = localStorage.getItem('study_streak_count') || '5';
+      const streakSaved = planId ? (localStorage.getItem('study_streak_count') || '5') : '0';
       setStreak(parseInt(streakSaved));
     }, 0);
 
@@ -242,19 +246,29 @@ export default function StudentDashboard() {
             Welcome back, {studentName}!
           </h1>
           <p className="text-xs md:text-sm text-brand-100 font-semibold leading-relaxed">
-            Your daily target milestones are mapped. Finish today&apos;s tasks checklist to maintain your streak cycle.
+            {activePlan ? "Your daily target milestones are mapped. Finish today's tasks checklist to maintain your streak cycle." : "You have no active study plan. Select a study plan from the Syllabus Roadmaps to begin your preparation!"}
           </p>
           <div className="pt-4 flex flex-wrap gap-3">
-            <Link href="/student/tasks">
-              <Button size="sm" variant="secondary" className="font-black px-6 shadow">
-                Resume Today&apos;s Tasks
-              </Button>
-            </Link>
-            <Link href="/student/my-plan">
-              <Button size="sm" variant="ghost" className="text-white hover:bg-white/10 font-bold border border-white/20 px-6">
-                View Week Roadmaps
-              </Button>
-            </Link>
+            {activePlan ? (
+              <>
+                <Link href="/student/tasks">
+                  <Button size="sm" variant="secondary" className="font-black px-6 shadow">
+                    Resume Today&apos;s Tasks
+                  </Button>
+                </Link>
+                <Link href="/student/my-plan">
+                  <Button size="sm" variant="ghost" className="text-white hover:bg-white/10 font-bold border border-white/20 px-6">
+                    View Week Roadmaps
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <Link href="/study-planner">
+                <Button size="sm" variant="secondary" className="font-black px-6 shadow">
+                  Browse Syllabus Roadmaps
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -360,6 +374,23 @@ export default function StudentDashboard() {
                 </div>
                 <ProgressBar value={progressPercent} color="brand" />
               </div>
+            </Card>
+          )}
+
+          {!activePlan && (
+            <Card className="border border-surface-200 bg-surface-50 text-center p-8 rounded-3xl flex flex-col items-center gap-3">
+              <span className="p-3 bg-brand-50 text-brand-600 rounded-2xl">
+                <BookOpen className="h-6 w-6" />
+              </span>
+              <h4 className="text-sm md:text-base font-black text-surface-850">Ready to start your exam prep?</h4>
+              <p className="text-xs text-surface-500 font-semibold max-w-sm">
+                Aspirav creates daily study roadmaps, checklists, and sectional quizzes tailored to your exam syllabus. Choose your exam to begin!
+              </p>
+              <Link href="/study-planner" className="mt-2">
+                <Button size="sm" variant="primary" className="font-black px-6">
+                  Select Study Plan
+                </Button>
+              </Link>
             </Card>
           )}
 
