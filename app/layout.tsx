@@ -17,8 +17,28 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Aspirav - Exam-wise Daily Study Planner",
-  description: "Daily target-based study planner and secure community for UPSC, SSC, Bank, and Railway aspirants.",
+  title: {
+    default: "Aspirav | Exam-wise Daily Study Planner & Doubts Board",
+    template: "%s | Aspirav"
+  },
+  description: "India's leading exam-wise daily study planner and peer doubts-clearing community for UPSC, SSC CGL, RRB NTPC, and IBPS PO government exam aspirants. Master your goals day by day.",
+  keywords: ["Aspirav", "Study Planner", "Exam preparation", "UPSC daily targets", "SSC CGL planner", "Government exam quiz", "Doubt solving community", "Toppers strategy blogs", "Syllabus tracking sheets"],
+  metadataBase: new URL("https://www.aspirav.co.in"),
+  alternates: {
+    canonical: "/"
+  },
+  robots: {
+    index: true,
+    follow: true
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_IN",
+    url: "https://www.aspirav.co.in",
+    siteName: "Aspirav",
+    title: "Aspirav - Exam-wise Daily Study Planner",
+    description: "Daily target-based study planner and secure community for UPSC, SSC, Bank, and Railway aspirants."
+  }
 };
 
 export default function RootLayout({
