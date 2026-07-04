@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
+// Next.js 16: file must be named proxy.ts and export a function named "proxy"
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const response = NextResponse.next();
 
@@ -10,17 +11,17 @@ export function middleware(request: NextRequest) {
     response.headers.set('X-Robots-Tag', 'noindex, nofollow');
   }
 
-  // 2. Tell crawlers not to index admin pages  
+  // 2. Tell crawlers not to index admin pages
   if (pathname.startsWith('/admin')) {
     response.headers.set('X-Robots-Tag', 'noindex, nofollow');
   }
 
-  // 3. Add security headers on all pages
+  // 3. Security headers on all pages
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'SAMEORIGIN');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
-  // 4. Cache static public pages for better performance
+  // 4. CDN cache hints for public content pages
   if (
     pathname.startsWith('/materials') ||
     pathname.startsWith('/guidance') ||
@@ -30,7 +31,6 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/daily-quiz') ||
     pathname.startsWith('/community')
   ) {
-    // CDN cache for 60s, browser revalidate
     response.headers.set(
       'Cache-Control',
       'public, s-maxage=60, stale-while-revalidate=300'
@@ -42,13 +42,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths EXCEPT:
-     * - _next/static (static files)
-     * - _next/image (image optimization)
-     * - favicon.ico
-     * - public assets (images, etc)
-     */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js)$).*)',
   ],
 };

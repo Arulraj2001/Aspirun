@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Input } from '@/components/ui/Input';
@@ -18,7 +18,6 @@ import {
   Users,
   Award,
 } from 'lucide-react';
-import type { Metadata } from 'next';
 
 const BENEFITS = [
   { icon: BookOpen, text: 'Daily study plans for UPSC, SSC, RRB & IBPS' },
@@ -31,7 +30,8 @@ const isSupabaseConfigured = () =>
   !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
   !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project-id');
 
-export default function LoginPage() {
+// Inner component uses useSearchParams — must be wrapped in Suspense
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams?.get('redirect') || searchParams?.get('next') || '/student/dashboard';
@@ -306,5 +306,25 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Outer page wraps LoginContent in Suspense so Next.js can prerender a shell
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-br from-brand-950 via-surface-950 to-indigo-950 flex items-center justify-center">
+          <div className="animate-pulse flex flex-col items-center gap-3">
+            <div className="p-3 bg-brand-500/30 rounded-2xl">
+              <GraduationCap className="h-8 w-8 text-brand-300" />
+            </div>
+            <div className="h-4 w-32 bg-white/10 rounded-lg" />
+          </div>
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }
