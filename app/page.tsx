@@ -175,19 +175,19 @@ export default function Home() {
           </div>
 
           {/* Hero CTAs */}
-          <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 w-full justify-center">
             <Link href="/study-planner" className="w-full sm:w-auto">
-              <Button size="lg" className="w-full justify-center" icon={<ArrowRight className="h-5 w-5" />} iconPosition="right">
+              <Button size="md" className="w-full justify-center" icon={<ArrowRight className="h-4.5 w-4.5" />} iconPosition="right">
                 Start Free Study Plan
               </Button>
             </Link>
             <Link href="/mock-tests" className="w-full sm:w-auto">
-              <Button size="lg" variant="outline" className="w-full justify-center">
+              <Button size="md" variant="outline" className="w-full justify-center">
                 View Mock Tests
               </Button>
             </Link>
             <Link href="/community" className="w-full sm:w-auto">
-              <Button size="lg" variant="secondary" className="w-full justify-center">
+              <Button size="md" variant="secondary" className="w-full justify-center">
                 Join Community
               </Button>
             </Link>
