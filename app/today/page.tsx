@@ -38,9 +38,6 @@ export default function TodayTasksPage() {
   useEffect(() => {
     // 1. Sync simulation session
     const role = localStorage.getItem('simulated_role') || 'guest';
-    if (role === 'guest') {
-      alert('Please login to continue.');
-    }
     const planId = localStorage.getItem('active_plan_id') || 'plan-upsc-polity-30';
     const plan = mockPlans.find((p) => p.id === planId);
 
@@ -107,7 +104,17 @@ export default function TodayTasksPage() {
     }, 0);
   }, [activePlanId, currentDay]);
 
+  const checkGuestAction = () => {
+    if (isGuest) {
+      alert('Please login to track your daily progress, complete tasks, and access study resources.');
+      router.push(`/login?message=Please%20login%20to%20continue.&redirect=${encodeURIComponent(window.location.pathname)}`);
+      return true;
+    }
+    return false;
+  };
+
   const toggleTaskStatus = (id: string) => {
+    if (checkGuestAction()) return;
     setTasks((prev) =>
       prev.map((task) => {
         if (task.id === id) {
@@ -128,10 +135,7 @@ export default function TodayTasksPage() {
 
   // Mark Day Complete logic
   const handleMarkDayComplete = () => {
-    if (isGuest) {
-      alert('Simulation restricted: Log in to save day checkpoints.');
-      return;
-    }
+    if (checkGuestAction()) return;
 
     // 1. Increment current day index
     const nextDay = currentDay + 1;
@@ -281,14 +285,14 @@ export default function TodayTasksPage() {
                         </div>
                         
                         {material && (
-                          <Link href="/materials">
+                          <Link href="/materials" onClick={(e) => { if (checkGuestAction()) e.preventDefault(); }}>
                             <Button variant="ghost" size="sm" className="h-8 text-xs font-black">
                               Open Notes
                             </Button>
                           </Link>
                         )}
                         {mockTest && (
-                          <Link href="/mock-tests">
+                          <Link href="/mock-tests" onClick={(e) => { if (checkGuestAction()) e.preventDefault(); }}>
                             <Button variant="primary" size="sm" className="h-8 text-xs font-black">
                               Start Quiz
                             </Button>
@@ -323,7 +327,7 @@ export default function TodayTasksPage() {
               >
                 Mark Day Complete
               </Button>
-              <Link href="/community">
+              <Link href="/community" onClick={(e) => { if (checkGuestAction()) e.preventDefault(); }}>
                 <Button
                   variant="ghost"
                   className="w-full justify-center text-xs font-black flex items-center gap-1 text-surface-650"
