@@ -50,10 +50,12 @@ export default function LoginPage() {
             .single();
 
           const userRole = profile?.role || 'student';
+          localStorage.setItem('simulated_role', userRole);
           
           if (userRole === 'admin') {
             setErrorMsg('Admin logins must be performed through the dedicated Admin portal.');
             await supabase.auth.signOut();
+            localStorage.setItem('simulated_role', 'guest');
             setLoading(false);
             return;
           }

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X, GraduationCap, ArrowRight, UserCheck, ShieldAlert } from 'lucide-react';
 import { Container } from '../ui/Container';
 import { Button } from '../ui/Button';
+import { supabase } from '@/lib/supabase/client';
 
 export const Header: React.FC = () => {
   const pathname = usePathname();
@@ -13,8 +14,11 @@ export const Header: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [role, setRole] = useState<'guest' | 'student' | 'admin'>('guest');
 
-  // Sync simulated role from localStorage
+  // Sync simulated role from localStorage and Supabase session
   useEffect(() => {
+    const isConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                         !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project-id');
+
     const syncRole = () => {
       const savedRole = localStorage.getItem('simulated_role') as 'guest' | 'student' | 'admin';
       if (savedRole) {
@@ -28,12 +32,68 @@ export const Header: React.FC = () => {
     };
     syncRole();
     const interval = setInterval(syncRole, 800);
-    return () => clearInterval(interval);
+
+    // Sync from active Supabase session
+    let unsubscribe: (() => void) | undefined;
+    if (isConfigured) {
+      const syncSession = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .single();
+          const dbRole = (profile?.role || 'student') as 'student' | 'admin';
+          localStorage.setItem('simulated_role', dbRole);
+          setRole(dbRole);
+        }
+      };
+      syncSession();
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .single();
+          const dbRole = (profile?.role || 'student') as 'student' | 'admin';
+          localStorage.setItem('simulated_role', dbRole);
+          setRole(dbRole);
+        } else {
+          // No active session: fallback to guest unless manually simulating student/admin
+          const savedRole = localStorage.getItem('simulated_role') as 'guest' | 'student' | 'admin';
+          if (savedRole !== 'student' && savedRole !== 'admin') {
+            localStorage.setItem('simulated_role', 'guest');
+            setRole('guest');
+          }
+        }
+      });
+      unsubscribe = () => subscription.unsubscribe();
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   if (pathname && (pathname.startsWith('/admin') || pathname === '/login' || pathname === '/register' || pathname === '/admin-login')) {
     return null;
   }
+
+  const handleLogout = async () => {
+    const isConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                         !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project-id');
+    if (isConfigured) {
+      await supabase.auth.signOut();
+    }
+    localStorage.setItem('simulated_role', 'guest');
+    localStorage.removeItem('simulated_profile');
+    setRole('guest');
+    router.push('/');
+  };
 
   const changeRole = (newRole: 'guest' | 'student' | 'admin') => {
     setRole(newRole);
@@ -135,7 +195,7 @@ export const Header: React.FC = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => changeRole('guest')}
+                onClick={handleLogout}
               >
                 Log Out
               </Button>
@@ -191,7 +251,7 @@ export const Header: React.FC = () => {
               <Button
                 variant="outline"
                 className="w-full justify-center"
-                onClick={() => { changeRole('guest'); setIsOpen(false); }}
+                onClick={() => { handleLogout(); setIsOpen(false); }}
               >
                 Log Out
               </Button>
