@@ -9,6 +9,7 @@ import { StatCard } from '@/components/ui/StatCard';
 import { Button } from '@/components/ui/Button';
 import { mockPlans, mockCommunityPosts, mockMaterials, mockMockTests, mockBlogs, mockCurrentAffairs } from '@/data/mockData';
 import { CommunityPost } from '@/types';
+import { supabase } from '@/lib/supabase/client';
 import {
   Users,
   FileText,
@@ -58,68 +59,71 @@ export default function AdminDashboard() {
   const [pendingPaymentsCount, setPendingPaymentsCount] = useState(0);
 
   useEffect(() => {
-    // 1. Initialize blogs
-    const savedBlogs = localStorage.getItem('blogs_db') || JSON.stringify(mockBlogs);
-    const blogsList = JSON.parse(savedBlogs);
+    const isConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                         !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project-id');
 
-    // 2. Initialize current affairs
-    const savedCA = localStorage.getItem('current_affairs_db') || JSON.stringify(mockCurrentAffairs);
-    const caList = JSON.parse(savedCA);
+    const loadSimulationStats = () => {
+      // 1. Initialize blogs
+      const savedBlogs = localStorage.getItem('blogs_db') || JSON.stringify(mockBlogs);
+      const blogsList = JSON.parse(savedBlogs);
 
-    // 3. Initialize materials
-    const savedMat = localStorage.getItem('materials_db') || JSON.stringify(mockMaterials);
-    const matList = JSON.parse(savedMat);
+      // 2. Initialize current affairs
+      const savedCA = localStorage.getItem('current_affairs_db') || JSON.stringify(mockCurrentAffairs);
+      const caList = JSON.parse(savedCA);
 
-    // 4. Initialize mock tests
-    const savedMocks = localStorage.getItem('mock_tests_db') || JSON.stringify(mockMockTests);
-    const mockList = JSON.parse(savedMocks);
+      // 3. Initialize materials
+      const savedMat = localStorage.getItem('materials_db') || JSON.stringify(mockMaterials);
+      const matList = JSON.parse(savedMat);
 
-    // 5. Initialize study plans
-    const savedPlans = localStorage.getItem('plans_db') || JSON.stringify(mockPlans);
-    const plansList = JSON.parse(savedPlans);
+      // 4. Initialize mock tests
+      const savedMocks = localStorage.getItem('mock_tests_db') || JSON.stringify(mockMockTests);
+      const mockList = JSON.parse(savedMocks);
 
-    // 6. Initialize questions count
-    const savedQs = localStorage.getItem('daily_quiz_configured_questions');
-    let qCount = 12;
-    if (savedQs) {
-      qCount = JSON.parse(savedQs).length;
-    }
+      // 5. Initialize study plans
+      const savedPlans = localStorage.getItem('plans_db') || JSON.stringify(mockPlans);
+      const plansList = JSON.parse(savedPlans);
 
-    // 7. Initialize student users
-    const savedUsers = localStorage.getItem('users_db');
-    let studCount = 85240;
-    let bannedCount = 0;
-    if (savedUsers) {
-      const usersList: StudentUser[] = JSON.parse(savedUsers);
-      studCount += usersList.length;
-      bannedCount = usersList.filter((u) => u.isBanned || u.isMuted).length;
-    }
-
-    // 8. Payment settings
-    const savedPaymentSettings = localStorage.getItem('payment_settings');
-    let payMode: 'on' | 'off' = 'off';
-    if (savedPaymentSettings) {
-      const settings: PaymentSettings = JSON.parse(savedPaymentSettings);
-      payMode = settings.payment_mode;
-    }
-
-    // 9. Pending payment requests
-    const savedPayReqs = localStorage.getItem('payment_requests_db');
-    let pendPayments = 0;
-    if (savedPayReqs) {
-      const reqs: PaymentRequest[] = JSON.parse(savedPayReqs);
-      pendPayments = reqs.filter((r) => r.status === 'pending').length;
-    }
-
-    // 10. Flag community posts
-    const flagged = mockCommunityPosts.map((p, idx) => {
-      if (idx === 2) {
-        return { ...p, reportsCount: 3 };
+      // 6. Initialize questions count
+      const savedQs = localStorage.getItem('daily_quiz_configured_questions');
+      let qCount = 12;
+      if (savedQs) {
+        qCount = JSON.parse(savedQs).length;
       }
-      return p;
-    });
 
-    setTimeout(() => {
+      // 7. Initialize student users
+      const savedUsers = localStorage.getItem('users_db');
+      let studCount = 85240;
+      let bannedCount = 0;
+      if (savedUsers) {
+        const usersList: StudentUser[] = JSON.parse(savedUsers);
+        studCount += usersList.length;
+        bannedCount = usersList.filter((u) => u.isBanned || u.isMuted).length;
+      }
+
+      // 8. Payment settings
+      const savedPaymentSettings = localStorage.getItem('payment_settings');
+      let payMode: 'on' | 'off' = 'off';
+      if (savedPaymentSettings) {
+        const settings: PaymentSettings = JSON.parse(savedPaymentSettings);
+        payMode = settings.payment_mode;
+      }
+
+      // 9. Pending payment requests
+      const savedPayReqs = localStorage.getItem('payment_requests_db');
+      let pendPayments = 0;
+      if (savedPayReqs) {
+        const reqs: PaymentRequest[] = JSON.parse(savedPayReqs);
+        pendPayments = reqs.filter((r) => r.status === 'pending').length;
+      }
+
+      // 10. Flag community posts
+      const flagged = mockCommunityPosts.map((p, idx) => {
+        if (idx === 2) {
+          return { ...p, reportsCount: 3 };
+        }
+        return p;
+      });
+
       setBlogsCount(blogsList.length);
       setCurrentAffairsCount(caList.length);
       setMaterialsCount(matList.length);
@@ -132,7 +136,78 @@ export default function AdminDashboard() {
       setPendingPaymentsCount(pendPayments);
       setPosts(flagged);
       setLoading(false);
-    }, 0);
+    };
+
+    if (isConfigured) {
+      const fetchLiveStats = async () => {
+        try {
+          const [
+            students,
+            plans,
+            materials,
+            mocks,
+            questions,
+            blogs,
+            ca,
+            banned,
+            pendingPay,
+            flagged,
+            payMode
+          ] = await Promise.all([
+            supabase.from('profiles').select('*', { count: 'exact', head: true }),
+            supabase.from('study_plans').select('*', { count: 'exact', head: true }),
+            supabase.from('materials').select('*', { count: 'exact', head: true }),
+            supabase.from('mock_tests').select('*', { count: 'exact', head: true }),
+            supabase.from('questions').select('*', { count: 'exact', head: true }),
+            supabase.from('blogs').select('*', { count: 'exact', head: true }),
+            supabase.from('current_affairs').select('*', { count: 'exact', head: true }),
+            supabase.from('profiles').select('*', { count: 'exact', head: true }).neq('community_status', 'active'),
+            supabase.from('payment_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+            supabase.from('community_reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+            supabase.from('payment_settings').select('payment_mode').single()
+          ]);
+
+          setStudentsCount(students.count || 0);
+          setPlansCount(plans.count || 0);
+          setMaterialsCount(materials.count || 0);
+          setMocksCount(mocks.count || 0);
+          setQuestionsCount(questions.count || 0);
+          setBlogsCount(blogs.count || 0);
+          setCurrentAffairsCount(ca.count || 0);
+          setBannedUsersCount(banned.count || 0);
+          setPendingPaymentsCount(pendingPay.count || 0);
+          setPaymentMode((payMode.data?.payment_mode as 'on' | 'off') || 'off');
+
+          // Try to fetch flagged posts from reports table if available
+          const { data: reports } = await supabase
+            .from('community_reports')
+            .select('id, content_type, reason, description')
+            .eq('status', 'pending')
+            .limit(10);
+            
+          if (reports && reports.length > 0) {
+            const mapped = reports.map(r => ({
+              id: r.id,
+              title: `${r.content_type.toUpperCase()} Report: ${r.reason}`,
+              authorName: 'Aspirav Student',
+              reportsCount: 1,
+              categorySlug: 'general',
+              content: r.description || ''
+            }));
+            setPosts(mapped as any);
+          } else {
+            setPosts([]);
+          }
+          setLoading(false);
+        } catch (err) {
+          console.error("Failed to load live admin statistics:", err);
+          loadSimulationStats();
+        }
+      };
+      fetchLiveStats();
+    } else {
+      loadSimulationStats();
+    }
   }, []);
 
   const handleRemovePost = (postId: string) => {
