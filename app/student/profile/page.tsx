@@ -513,7 +513,7 @@ export default function StudentProfile() {
           </Card>
 
           {/* Billing & Membership Pass History */}
-          <Card className="border border-surface-200 bg-white">
+          <Card id="billing" className="border border-surface-200 bg-white">
             <h3 className="text-base font-extrabold text-surface-900 mb-4 flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-brand-500" />
               Billing & Membership History

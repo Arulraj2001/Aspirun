@@ -149,6 +149,7 @@ export const Header: React.FC = () => {
     { label: 'My Profile', href: '/student/profile' },
     { label: 'My Study Plan', href: '/student/my-plan' },
     { label: 'My Tasks', href: '/student/tasks' },
+    { label: 'My Payments', href: '/student/profile#billing' },
     { label: 'My Mock Results', href: '/student/mock-results' },
     { label: 'Saved Materials', href: '/student/saved-materials' },
   ];
