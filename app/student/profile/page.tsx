@@ -79,6 +79,17 @@ export default function StudentProfile() {
               .single();
 
             if (data) {
+              let targetExamValue = '';
+              if (data.target_exam_id === '433a7ad1-77ad-4560-bf88-a739b8bc7e6a') {
+                targetExamValue = 'exam-ssc';
+              } else if (data.target_exam_id === '123e4567-e89b-12d3-a456-426614174000') {
+                targetExamValue = 'exam-upsc';
+              } else if (data.target_exam_id === 'b7c53d10-8b1b-4f51-b0db-bcf643f8e52e') {
+                targetExamValue = 'exam-rrb';
+              } else if (data.target_exam_id === 'cb03e190-21a4-4f9e-a0db-bcd6f58bc7ea') {
+                targetExamValue = 'exam-ibps';
+              }
+
               profileData = {
                 fullName: data.full_name || '',
                 username: data.username || '',
@@ -86,7 +97,7 @@ export default function StudentProfile() {
                 phone: data.phone || '',
                 city: data.city || '',
                 qualification: data.qualification || '',
-                targetExam: data.target_exam_id || '',
+                targetExam: targetExamValue,
                 avatarUrl: data.avatar_url || '',
               };
             } else {
@@ -292,6 +303,17 @@ export default function StudentProfile() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
+          let targetExamUuid: string | null = null;
+          if (profile.targetExam === 'exam-ssc') {
+            targetExamUuid = '433a7ad1-77ad-4560-bf88-a739b8bc7e6a';
+          } else if (profile.targetExam === 'exam-upsc') {
+            targetExamUuid = '123e4567-e89b-12d3-a456-426614174000';
+          } else if (profile.targetExam === 'exam-rrb') {
+            targetExamUuid = 'b7c53d10-8b1b-4f51-b0db-bcf643f8e52e';
+          } else if (profile.targetExam === 'exam-ibps') {
+            targetExamUuid = 'cb03e190-21a4-4f9e-a0db-bcd6f58bc7ea';
+          }
+
           const { error } = await supabase
             .from('profiles')
             .update({
@@ -300,7 +322,7 @@ export default function StudentProfile() {
               phone: profile.phone,
               city: profile.city,
               qualification: profile.qualification,
-              target_exam_id: profile.targetExam || null,
+              target_exam_id: targetExamUuid,
             })
             .eq('id', session.user.id);
 
