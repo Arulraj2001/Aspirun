@@ -46,6 +46,11 @@ export default function MockTestsPage() {
 
   const handleStartMock = () => {
     if (!selectedMock) return;
+    const role = localStorage.getItem('simulated_role') || 'guest';
+    if (role === 'guest') {
+      alert('Please login to continue.');
+      return;
+    }
     setIsModalOpen(false);
     // Redirect to attempt start route
     const testSlug = selectedMock.slug || selectedMock.id;

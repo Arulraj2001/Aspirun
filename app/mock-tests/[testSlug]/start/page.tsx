@@ -41,8 +41,7 @@ export default function MockTestAttemptPage({ params }: PageProps) {
   useEffect(() => {
     const role = localStorage.getItem('simulated_role') || 'guest';
     if (role === 'guest') {
-      alert('Please login to continue.');
-      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+      router.push(`/login?message=Please%20login%20to%20continue.&redirect=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
 

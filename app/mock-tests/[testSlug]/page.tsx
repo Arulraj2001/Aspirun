@@ -61,10 +61,18 @@ export default function MockTestInstructionPage({ params }: PageProps) {
     const role = localStorage.getItem('simulated_role') || 'guest';
     if (role === 'guest') {
       alert('Please login to continue.');
-      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
     setShowPaymentModal(true);
+  };
+
+  const handleConfirmStart = () => {
+    const role = localStorage.getItem('simulated_role') || 'guest';
+    if (role === 'guest') {
+      alert('Please login to continue.');
+      return;
+    }
+    router.push(`/mock-tests/${testSlug}/start`);
   };
 
   const syncAccessData = useCallback(() => {
@@ -227,11 +235,9 @@ export default function MockTestInstructionPage({ params }: PageProps) {
 
             <div className="flex gap-3 items-center w-full sm:w-auto justify-end">
               {hasAccess ? (
-                <Link href={`/mock-tests/${testSlug}/start`}>
-                  <Button size="md" variant="primary" className="px-8 font-black">
-                    Confirm & Start Assessment
-                  </Button>
-                </Link>
+                <Button onClick={handleConfirmStart} size="md" variant="primary" className="px-8 font-black">
+                  Confirm & Start Assessment
+                </Button>
               ) : (
                 <div className="flex flex-wrap gap-3 items-center justify-end w-full">
                   <Button onClick={handleOpenPayment} size="md" variant="secondary">
