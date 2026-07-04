@@ -9,6 +9,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { mockTasks, mockPlans, mockMaterials, mockMockTests } from '@/data/mockData';
 import { Task, TaskStatus } from '@/types';
+import { useAuth } from '@/lib/hooks/useAuth';
 import {
   CheckCircle2,
   Circle,
@@ -18,31 +19,29 @@ import {
   MessageSquare,
   ChevronRight,
   TrendingUp,
-  AlertCircle,
   Clock,
   Sparkles
 } from 'lucide-react';
 
 export default function StudentTasksPage() {
+  const { isLoggedIn } = useAuth();
+
   // Active state parameters
   const [activePlanId, setActivePlanId] = useState<string | null>(null);
   const [activePlanTitle, setActivePlanTitle] = useState('');
   const [currentDay, setCurrentDay] = useState(1);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [isGuest, setIsGuest] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [streakCount, setStreakCount] = useState(0);
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
 
   useEffect(() => {
-    // 1. Sync simulation session
-    const role = localStorage.getItem('simulated_role') || 'guest';
+    // Load active plan from localStorage (set when user enrolls in a plan)
     const planId = localStorage.getItem('active_plan_id') || null;
     const plan = planId ? mockPlans.find((p) => p.id === planId) : null;
 
     if (!planId) {
       setTimeout(() => {
-        setIsGuest(role === 'guest');
         setActivePlanId(null);
         setActivePlanTitle('');
         setStreakCount(0);
@@ -104,7 +103,6 @@ export default function StudentTasksPage() {
     });
 
     setTimeout(() => {
-      setIsGuest(role === 'guest');
       setActivePlanId(planId);
       setStreakCount(streak);
       if (plan) {
@@ -136,11 +134,6 @@ export default function StudentTasksPage() {
 
   // Mark Day Complete logic
   const handleMarkDayComplete = () => {
-    if (isGuest) {
-      alert('Simulation restricted: Log in to save day checkpoints.');
-      return;
-    }
-
     // 1. Increment current day index
     const nextDay = currentDay + 1;
     localStorage.setItem(`simulated_current_day_${activePlanId}`, String(nextDay));
@@ -168,18 +161,7 @@ export default function StudentTasksPage() {
 
   return (
     <Container size="xl" className="py-8 md:py-12">
-      {/* Guest Alert banner */}
-      {isGuest && (
-        <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs md:text-sm font-semibold text-orange-850">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-orange-650 shrink-0" />
-            <span>Running in offline Guest Mode. Mock updates will reset on refresh.</span>
-          </div>
-          <Link href="/register">
-            <Button size="sm" variant="success">Register Student Account</Button>
-          </Link>
-        </div>
-      )}
+      {/* No plan CTA — only shown when no plan is active, never a guest banner */}
 
       {/* Celebration Modal Block */}
       {showCelebration && (
@@ -230,20 +212,42 @@ export default function StudentTasksPage() {
       </div>
 
       {!activePlanId ? (
-        <Card className="border border-surface-200 bg-surface-50 text-center p-12 rounded-3xl flex flex-col items-center gap-4 max-w-2xl mx-auto mt-8">
-          <span className="p-4 bg-brand-50 text-brand-600 rounded-2xl">
-            <Sparkles className="h-8 w-8 animate-pulse" />
-          </span>
-          <h3 className="text-lg md:text-xl font-black text-surface-900">Start Your Daily Learning Routine</h3>
-          <p className="text-xs md:text-sm text-surface-500 font-semibold max-w-md">
-            No active study plan was found. Choose a syllabus roadmap program first, and Aspirav will automatically map daily checklists and notes to guide your study routine.
-          </p>
-          <Link href="/study-planner" className="mt-2">
-            <Button size="md" variant="primary" className="font-black px-8">
-              Explore Syllabus Roadmaps
-            </Button>
-          </Link>
-        </Card>
+        <div className="max-w-2xl mx-auto mt-8 space-y-4">
+          <Card className="border border-surface-200 bg-white text-center p-10 rounded-3xl flex flex-col items-center gap-4 shadow-sm">
+            <span className="p-4 bg-brand-50 text-brand-600 rounded-2xl">
+              <Sparkles className="h-8 w-8 animate-pulse" />
+            </span>
+            <h3 className="text-lg md:text-xl font-black text-surface-900">No Study Plan Enrolled Yet</h3>
+            <p className="text-xs md:text-sm text-surface-500 font-semibold max-w-md leading-relaxed">
+              You&apos;re logged in! Now pick a study plan from the Study Planner — once enrolled, your daily tasks will appear here automatically.
+            </p>
+            <Link href="/study-planner" className="mt-2">
+              <Button size="md" variant="primary" className="font-black px-8" icon={<ChevronRight className="h-4 w-4" />} iconPosition="right">
+                Browse Study Plans
+              </Button>
+            </Link>
+          </Card>
+
+          {/* Steps */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              { step: '1', title: 'Pick Your Exam', desc: 'Choose UPSC, SSC CGL, RRB NTPC or IBPS PO' },
+              { step: '2', title: 'Enroll in a Plan', desc: 'Click "Start This Plan" on any study plan' },
+              { step: '3', title: 'Study Daily', desc: 'Come back here — your checklist will be ready!' },
+            ].map((s) => (
+              <div key={s.step} className="flex items-start gap-3 p-4 bg-white rounded-2xl border border-surface-200">
+                <span className="h-6 w-6 bg-brand-500 text-white rounded-lg flex items-center justify-center text-xs font-black shrink-0">
+                  {s.step}
+                </span>
+                <div>
+                  <p className="text-xs font-black text-surface-900">{s.title}</p>
+                  <p className="text-[10px] text-surface-450 font-semibold mt-0.5">{s.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
