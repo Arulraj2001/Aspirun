@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, X, GraduationCap, ArrowRight, UserCheck, ShieldAlert } from 'lucide-react';
+import { Menu, X, GraduationCap, ArrowRight, UserCheck, ShieldAlert, ChevronDown, User, LogOut } from 'lucide-react';
 import { Container } from '../ui/Container';
 import { Button } from '../ui/Button';
 import { supabase } from '@/lib/supabase/client';
@@ -13,6 +13,20 @@ export const Header: React.FC = () => {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [role, setRole] = useState<'guest' | 'student' | 'admin'>('guest');
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    if (!showDropdown) return;
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.profile-dropdown-wrapper')) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('click', handleOutsideClick);
+    return () => document.removeEventListener('click', handleOutsideClick);
+  }, [showDropdown]);
 
   // Sync simulated role from localStorage and Supabase session
   useEffect(() => {
@@ -121,12 +135,20 @@ export const Header: React.FC = () => {
 
   const studentNavLinks = [
     { label: 'Dashboard', href: '/student/dashboard' },
-    { label: 'My Plan', href: '/student/my-plan' },
-    { label: 'Tasks', href: '/student/tasks' },
-    { label: 'Mock Results', href: '/student/mock-results' },
+    { label: 'Study Planner', href: '/study-planner' },
+    { label: 'Mock Tests', href: '/mock-tests' },
+    { label: 'Materials', href: '/materials' },
+    { label: 'Community', href: '/community' },
+    { label: 'Current Affairs', href: '/current-affairs' },
+    { label: 'Guidance', href: '/guidance' },
+  ];
+
+  const studentProfileLinks = [
+    { label: 'My Profile', href: '/student/profile' },
+    { label: 'My Study Plan', href: '/student/my-plan' },
+    { label: 'My Tasks', href: '/student/tasks' },
+    { label: 'My Mock Results', href: '/student/mock-results' },
     { label: 'Saved Materials', href: '/student/saved-materials' },
-    { label: 'Community', href: '/student/community' },
-    { label: 'Profile', href: '/student/profile' },
   ];
 
   const adminNavLinks = [
@@ -192,13 +214,62 @@ export const Header: React.FC = () => {
                 </Link>
               </>
             ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLogout}
-              >
-                Log Out
-              </Button>
+              /* User Profile Dropdown */
+              <div className="relative profile-dropdown-wrapper">
+                <button
+                  onClick={() => setShowDropdown(!showDropdown)}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-surface-50 hover:bg-surface-100 border border-surface-200 rounded-xl text-sm font-black text-surface-700 transition-colors focus:outline-none cursor-pointer"
+                >
+                  <span className="h-6.5 w-6.5 bg-brand-500 text-white rounded-lg flex items-center justify-center font-extrabold text-xs">
+                    S
+                  </span>
+                  <span>My Account</span>
+                  <ChevronDown className={`h-4 w-4 text-surface-450 transition-transform duration-200 ${showDropdown ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showDropdown && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white border border-surface-200 rounded-2xl shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="px-4 py-2 border-b border-surface-100 mb-1">
+                      <p className="text-xs font-black text-surface-850 truncate">Siddharth Mishra</p>
+                      <p className="text-[10px] font-semibold text-surface-450 truncate">aspirant@aspirav.in</p>
+                    </div>
+
+                    {role === 'student' && studentProfileLinks.map((item) => (
+                      <Link
+                        key={item.label}
+                        href={item.href}
+                        onClick={() => setShowDropdown(false)}
+                        className="flex items-center px-4 py-2 text-xs font-bold text-surface-650 hover:bg-brand-50/50 hover:text-brand-700 transition-colors"
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+
+                    {role === 'admin' && (
+                      <Link
+                        href="/admin/settings"
+                        onClick={() => setShowDropdown(false)}
+                        className="flex items-center px-4 py-2 text-xs font-bold text-surface-650 hover:bg-brand-50/50 hover:text-brand-700 transition-colors"
+                      >
+                        Global Settings
+                      </Link>
+                    )}
+
+                    <div className="border-t border-surface-100 mt-1 pt-1">
+                      <button
+                        onClick={() => {
+                          setShowDropdown(false);
+                          handleLogout();
+                        }}
+                        className="w-full flex items-center gap-2 px-4 py-2 text-xs font-black text-danger-650 hover:bg-danger-50 transition-colors text-left cursor-pointer"
+                      >
+                        <LogOut className="h-3.5 w-3.5" />
+                        Log Out
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
@@ -248,13 +319,34 @@ export const Header: React.FC = () => {
                 </Link>
               </>
             ) : (
-              <Button
-                variant="outline"
-                className="w-full justify-center"
-                onClick={() => { handleLogout(); setIsOpen(false); }}
-              >
-                Log Out
-              </Button>
+              /* Mobile Student Links Panel */
+              <div className="space-y-3">
+                {role === 'student' && (
+                  <div className="space-y-1.5">
+                    <p className="text-[10px] font-black uppercase text-surface-400 tracking-wider px-2">Account Management</p>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {studentProfileLinks.map((item) => (
+                        <Link
+                          key={item.label}
+                          href={item.href}
+                          onClick={() => setIsOpen(false)}
+                          className="px-3 py-2 bg-surface-50 border border-surface-150 hover:bg-brand-50/20 text-xs font-bold text-surface-700 hover:text-brand-700 rounded-xl transition-all"
+                        >
+                          {item.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <Button
+                  variant="outline"
+                  className="w-full justify-center text-danger-600 border-danger-200 hover:bg-danger-50"
+                  onClick={() => { handleLogout(); setIsOpen(false); }}
+                >
+                  Log Out
+                </Button>
+              </div>
             )}
           </div>
         </div>
