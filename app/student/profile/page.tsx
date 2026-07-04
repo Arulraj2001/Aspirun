@@ -29,17 +29,17 @@ export default function StudentProfile() {
 
   // Profile fields state
   const [profile, setProfile] = useState<UserProfile>({
-    fullName: 'Siddharth Mishra',
-    username: 'siddharth_99',
-    email: 'aspirant@aspirav.in',
-    phone: '9876543210',
-    city: 'New Delhi',
-    qualification: 'B.Tech Graduate',
-    targetExam: 'exam-ssc',
+    fullName: '',
+    username: '',
+    email: '',
+    phone: '',
+    city: '',
+    qualification: '',
+    targetExam: '',
     avatarUrl: '',
   });
 
-  const [activePlanTitle, setActivePlanTitle] = useState('30-Day Laxmikanth Indian Polity Crash Course');
+  const [activePlanTitle, setActivePlanTitle] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [usernameConflict, setUsernameConflict] = useState(false);
@@ -55,8 +55,8 @@ export default function StudentProfile() {
 
   useEffect(() => {
     // 1. Sync study plan title
-    const planId = localStorage.getItem('active_plan_id') || 'plan-upsc-polity-30';
-    const plan = mockPlans.find((p) => p.id === planId);
+    const planId = localStorage.getItem('active_plan_id') || null;
+    const plan = planId ? mockPlans.find((p) => p.id === planId) : null;
 
     // 2. Load profile (either real Supabase profiles table, or local mock data)
     const loadProfile = async () => {
@@ -82,12 +82,23 @@ export default function StudentProfile() {
               profileData = {
                 fullName: data.full_name || '',
                 username: data.username || '',
-                email: data.email || '',
+                email: data.email || session.user.email || '',
                 phone: data.phone || '',
                 city: data.city || '',
                 qualification: data.qualification || '',
                 targetExam: data.target_exam_id || '',
                 avatarUrl: data.avatar_url || '',
+              };
+            } else {
+              profileData = {
+                fullName: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '',
+                username: session.user.email?.split('@')[0] || '',
+                email: session.user.email || '',
+                phone: '',
+                city: '',
+                qualification: '',
+                targetExam: '',
+                avatarUrl: '',
               };
             }
 
@@ -119,6 +130,18 @@ export default function StudentProfile() {
           } catch (e) {
             console.error('Failed to parse simulated profile:', e);
           }
+        } else {
+          // Default empty/fresh simulated profile for standard guests
+          profileData = {
+            fullName: 'Aspirant',
+            username: 'aspirant_user',
+            email: 'aspirant@aspirav.in',
+            phone: '',
+            city: '',
+            qualification: '',
+            targetExam: '',
+            avatarUrl: '',
+          };
         }
 
         // Payments fallback
@@ -143,6 +166,8 @@ export default function StudentProfile() {
       setTimeout(() => {
         if (plan) {
           setActivePlanTitle(plan.title);
+        } else {
+          setActivePlanTitle('No active plan chosen yet.');
         }
         if (profileData) {
           setProfile(profileData);
@@ -284,6 +309,16 @@ export default function StudentProfile() {
             setIsSaving(false);
             return;
           }
+
+          if (profile.targetExam) {
+            const nextPlanId = profile.targetExam === 'exam-upsc' ? 'plan-upsc-polity-30' : 'plan-ssc-quant-45';
+            localStorage.setItem('active_plan_id', nextPlanId);
+            const plan = mockPlans.find((p) => p.id === nextPlanId);
+            if (plan) setActivePlanTitle(plan.title);
+          } else {
+            localStorage.removeItem('active_plan_id');
+            setActivePlanTitle('No active plan chosen yet.');
+          }
         }
       } catch (err) {
         console.error('Profile save error:', err);
@@ -292,10 +327,13 @@ export default function StudentProfile() {
       // Mock save
       localStorage.setItem('simulated_profile', JSON.stringify(profile));
       if (profile.targetExam) {
-        localStorage.setItem('active_plan_id', profile.targetExam === 'exam-upsc' ? 'plan-upsc-polity-30' : 'plan-ssc-quant-45');
-        // Retrieve plan name
-        const plan = mockPlans.find((p) => p.id === (profile.targetExam === 'exam-upsc' ? 'plan-upsc-polity-30' : 'plan-ssc-quant-45'));
+        const nextPlanId = profile.targetExam === 'exam-upsc' ? 'plan-upsc-polity-30' : 'plan-ssc-quant-45';
+        localStorage.setItem('active_plan_id', nextPlanId);
+        const plan = mockPlans.find((p) => p.id === nextPlanId);
         if (plan) setActivePlanTitle(plan.title);
+      } else {
+        localStorage.removeItem('active_plan_id');
+        setActivePlanTitle('No active plan chosen yet.');
       }
     }
 
