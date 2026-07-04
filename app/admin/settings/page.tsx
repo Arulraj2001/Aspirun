@@ -71,11 +71,18 @@ export default function AdminSettingsPage() {
           </p>
         </div>
 
-        <Link href="/admin/settings/payment">
-          <Button size="sm" icon={<CreditCard className="h-4.5 w-4.5" />}>
-            UPI Billing Settings
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/admin/settings/payment">
+            <Button size="sm" variant="outline" icon={<CreditCard className="h-4.5 w-4.5" />}>
+              UPI Billing Settings
+            </Button>
+          </Link>
+          <Link href="/admin/settings/subscription">
+            <Button size="sm" icon={<Settings className="h-4.5 w-4.5" />}>
+              Subscription Pricing
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <Card className="border border-surface-200">
