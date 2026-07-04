@@ -40,8 +40,6 @@ export default function TodayTasksPage() {
     const role = localStorage.getItem('simulated_role') || 'guest';
     if (role === 'guest') {
       alert('Please login to continue.');
-      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
-      return;
     }
     const planId = localStorage.getItem('active_plan_id') || 'plan-upsc-polity-30';
     const plan = mockPlans.find((p) => p.id === planId);
