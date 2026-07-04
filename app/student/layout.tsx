@@ -24,6 +24,27 @@ export default function StudentLayout({
         try {
           const { data: { session } } = await supabase.auth.getSession();
           if (!session) {
+            // Check if there is an active local storage auth token that is currently synchronizing/recovering
+            let hasToken = false;
+            for (let i = 0; i < localStorage.length; i++) {
+              const key = localStorage.key(i);
+              if (key?.startsWith('sb-') && key.endsWith('-auth-token')) {
+                hasToken = true;
+                break;
+              }
+            }
+
+            if (hasToken) {
+              // Wait 1.5s to let Supabase client complete clock-skew resolution or background refresh
+              await new Promise((resolve) => setTimeout(resolve, 1500));
+              const { data: { session: retriedSession } } = await supabase.auth.getSession();
+              if (retriedSession) {
+                setAuthorized(true);
+                setLoading(false);
+                return;
+              }
+            }
+
             alert('Please login to continue.');
             router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
             return;
