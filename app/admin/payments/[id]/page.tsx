@@ -19,7 +19,7 @@ interface PaymentRequest {
   user: string;
   username: string;
   userId: string; // Keep user_id to insert into user_content_access
-  contentType: 'study_plan' | 'material' | 'mock_test';
+  contentType: 'study_plan' | 'material' | 'mock_test' | 'subscription';
   contentId: string;
   contentTitle: string;
   amount: number;
@@ -147,18 +147,46 @@ export default function AdminPaymentDetailPage({ params }: PageProps) {
 
         if (updateError) throw updateError;
 
-        // 2. Grant access record (on conflict do nothing)
-        const { error: accessError } = await supabase
-          .from('user_content_access')
-          .insert({
-            user_id: request.userId,
-            content_type: dbContentType,
-            content_id: request.contentId,
-            granted_by: session.user.id
-          });
+        // 2. Grant access based on type
+        if (dbContentType === 'subscription') {
+          // Fetch plan duration
+          const { data: planData } = await supabase
+            .from('subscription_plans')
+            .select('duration_months')
+            .eq('id', request.contentId)
+            .maybeSingle();
 
-        if (accessError && !accessError.message.includes('unique') && accessError.code !== '23505') {
-          throw accessError;
+          const months = planData?.duration_months || 1;
+          const expiry = new Date();
+          expiry.setMonth(expiry.getMonth() + months);
+
+          const { error: subError } = await supabase
+            .from('student_subscriptions')
+            .insert({
+              user_id: request.userId,
+              plan_id: request.contentId,
+              amount_paid: request.amount,
+              starts_at: new Date().toISOString(),
+              ends_at: expiry.toISOString(),
+              payment_request_id: request.id,
+              status: 'active'
+            });
+
+          if (subError) throw subError;
+        } else {
+          // Grant individual item access keys
+          const { error: accessError } = await supabase
+            .from('user_content_access')
+            .insert({
+              user_id: request.userId,
+              content_type: dbContentType,
+              content_id: request.contentId,
+              granted_by: session.user.id
+            });
+
+          if (accessError && !accessError.message.includes('unique') && accessError.code !== '23505') {
+            throw accessError;
+          }
         }
 
         alert('Payment approved. Premium access keys successfully granted.');
@@ -179,20 +207,34 @@ export default function AdminPaymentDetailPage({ params }: PageProps) {
       });
       localStorage.setItem('payment_requests_db', JSON.stringify(updatedReqs));
 
-      // Create user content access row
-      const savedAccess = localStorage.getItem('user_content_access_db') || '[]';
-      const allAccess: UserContentAccess[] = JSON.parse(savedAccess);
-      const alreadyOwns = allAccess.some(
-        (a) => a.username === request.username && a.contentType === request.contentType && a.contentId === request.contentId
-      );
+      // Handle subscription vs direct item in simulation mode
+      if (request.contentType === 'subscription') {
+        const expiry = new Date();
+        // Assume 6 months pass for demo
+        expiry.setMonth(expiry.getMonth() + 6);
 
-      if (!alreadyOwns) {
-        allAccess.push({
-          username: request.username,
-          contentType: request.contentType,
-          contentId: request.contentId
-        });
-        localStorage.setItem('user_content_access_db', JSON.stringify(allAccess));
+        const simulatedSub = {
+          name: request.contentTitle,
+          starts_at: new Date().toISOString(),
+          ends_at: expiry.toISOString(),
+          status: 'active'
+        };
+        localStorage.setItem('simulated_subscription', JSON.stringify(simulatedSub));
+      } else {
+        const savedAccess = localStorage.getItem('user_content_access_db') || '[]';
+        const allAccess: UserContentAccess[] = JSON.parse(savedAccess);
+        const alreadyOwns = allAccess.some(
+          (a) => a.username === request.username && a.contentType === request.contentType && a.contentId === request.contentId
+        );
+
+        if (!alreadyOwns) {
+          allAccess.push({
+            username: request.username,
+            contentType: request.contentType,
+            contentId: request.contentId
+          });
+          localStorage.setItem('user_content_access_db', JSON.stringify(allAccess));
+        }
       }
 
       alert('Payment approved. Premium access keys successfully granted.');

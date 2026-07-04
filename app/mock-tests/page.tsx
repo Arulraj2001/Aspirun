@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Container } from '@/components/ui/Container';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { Card } from '@/components/ui/Card';
@@ -12,9 +13,10 @@ import { DifficultyBadge } from '@/components/ui/DifficultyBadge';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { mockExams, mockMockTests } from '@/data/mockData';
 import { MockTest } from '@/types';
-import { FileQuestion, Clock, Award, PlayCircle, Search, AlertCircle } from 'lucide-react';
+import { FileQuestion, Clock, Award, PlayCircle, Search, AlertCircle, Lock } from 'lucide-react';
 
 export default function MockTestsPage() {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [examId, setExamId] = useState('all');
   const [subject, setSubject] = useState('all');
@@ -226,10 +228,16 @@ export default function MockTestsPage() {
                 <div className="flex items-center justify-between gap-3 pt-2">
                   <StatusBadge status={mock.isFree ? 'free' : 'locked'} />
                   <Button
-                    onClick={() => handleOpenInstructions(mock)}
+                    onClick={() => {
+                      if (mock.isFree) {
+                        handleOpenInstructions(mock);
+                      } else {
+                        router.push(`/mock-tests/${mock.slug || mock.id}`);
+                      }
+                    }}
                     size="sm"
                     variant={mock.isFree ? 'primary' : 'secondary'}
-                    icon={<PlayCircle className="h-4.5 w-4.5" />}
+                    icon={mock.isFree ? <PlayCircle className="h-4.5 w-4.5" /> : <Lock className="h-4 w-4" />}
                   >
                     {mock.isFree ? 'Attempt Test' : 'Unlock Test'}
                   </Button>

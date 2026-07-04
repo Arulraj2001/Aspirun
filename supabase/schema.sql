@@ -370,8 +370,8 @@ create table public.payment_settings (
 create table public.payment_requests (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references public.profiles(id) on delete cascade not null,
-  content_type text not null check (content_type in ('plan', 'material', 'mock_test')),
-  content_id uuid not null, -- references study plan, mock test or material id
+  content_type text not null check (content_type in ('plan', 'material', 'mock_test', 'subscription')),
+  content_id uuid not null, -- references study plan, mock test, material, or subscription plan id
   amount numeric(10, 2) not null check (amount >= 0),
   upi_transaction_id text not null unique,
   screenshot_url text,
@@ -702,5 +702,51 @@ create policy "Admins can manage user content access records" on public.user_con
   exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
 );
 create policy "Admins can manage admin logs" on public.admin_logs for all using (
+  exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+);
+
+-- ==========================================
+-- 8. SUBSCRIPTION PLANS AND SEED TABLES
+-- ==========================================
+
+create table if not exists public.subscription_plans (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  duration_months integer not null check (duration_months > 0),
+  price numeric(10, 2) not null check (price >= 0),
+  description text,
+  status text not null check (status in ('active', 'inactive')) default 'active',
+  created_at timestamp with time zone default now(),
+  updated_at timestamp with time zone default now()
+);
+
+create table if not exists public.student_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  plan_id uuid references public.subscription_plans(id) on delete set null,
+  amount_paid numeric(10, 2) not null check (amount_paid >= 0),
+  starts_at timestamp with time zone not null default now(),
+  ends_at timestamp with time zone not null,
+  payment_request_id uuid references public.payment_requests(id) on delete set null,
+  status text not null check (status in ('active', 'expired', 'pending')) default 'active',
+  created_at timestamp with time zone default now()
+);
+
+-- RLS Enablement
+alter table public.subscription_plans enable row level security;
+alter table public.student_subscriptions enable row level security;
+
+-- Policies
+create policy "Anyone can view active subscription plans" on public.subscription_plans for select using (
+  status = 'active'
+);
+create policy "Admins can manage subscription plans" on public.subscription_plans for all using (
+  exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+);
+
+create policy "Users can view their own subscription records" on public.student_subscriptions for select using (
+  user_id = auth.uid()
+);
+create policy "Admins can manage all subscription records" on public.student_subscriptions for all using (
   exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
 );

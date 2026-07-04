@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { mockMockTests } from '@/data/mockData';
 import { MockTest, Question, MockResult } from '@/types';
+import { supabase } from '@/lib/supabase/client';
 import {
   Clock,
   Menu,
@@ -39,140 +40,206 @@ export default function MockTestAttemptPage({ params }: PageProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const role = localStorage.getItem('simulated_role') || 'guest';
-    if (role === 'guest') {
-      router.push(`/login?message=Please%20login%20to%20continue.&redirect=${encodeURIComponent(window.location.pathname)}`);
-      return;
-    }
+    const isConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                         !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project-id');
 
-    // 1. Sync Mock Tests and retrieve matching test profile
-    let savedTests = localStorage.getItem('mock_tests_db');
-    if (!savedTests) {
-      localStorage.setItem('mock_tests_db', JSON.stringify(mockMockTests));
-      savedTests = JSON.stringify(mockMockTests);
-    }
-    const tests: MockTest[] = JSON.parse(savedTests);
-    const item = tests.find((t) => t.slug === testSlug || t.id === testSlug);
-
-    // 2. Sync Questions DB or seed defaults
-    let savedQs = localStorage.getItem('questions_db');
-    if (!savedQs) {
-      const defaultQuestions: Question[] = [
-        {
-          id: 'q-pol-1',
-          examId: 'exam-upsc',
-          subject: 'Indian Polity',
-          topic: 'Constitutional Framing',
-          questionText: 'Who was the chairman of the Drafting Committee of the Indian Constitution?',
-          optionA: 'Dr. B.R. Ambedkar',
-          optionB: 'Dr. Rajendra Prasad',
-          optionC: 'Jawaharlal Nehru',
-          optionD: 'Sardar Vallabhbhai Patel',
-          correctOption: 'A',
-          explanation: 'Dr. B.R. Ambedkar was appointed the chairman of the Drafting Committee on August 29, 1947.',
-          difficulty: 'Easy',
-          marks: 2,
-          negativeMarks: 0.5,
-          status: 'published'
-        },
-        {
-          id: 'q-pol-2',
-          examId: 'exam-upsc',
-          subject: 'Indian Polity',
-          topic: 'Emergency Provisions',
-          questionText: 'Under which Article of the Constitution can the President declare a National Emergency?',
-          optionA: 'Article 352',
-          optionB: 'Article 356',
-          optionC: 'Article 360',
-          optionD: 'Article 368',
-          correctOption: 'A',
-          explanation: 'Article 352 states that the President can declare a National Emergency due to war, external aggression, or armed rebellion.',
-          difficulty: 'Easy',
-          marks: 2,
-          negativeMarks: 0.5,
-          status: 'published'
-        },
-        {
-          id: 'q-pol-3',
-          examId: 'exam-upsc',
-          subject: 'Indian Polity',
-          topic: 'Fundamental Rights',
-          questionText: 'The concept of "Fundamental Rights" in the Indian Constitution is borrowed from which nation?',
-          optionA: 'United States of America',
-          optionB: 'United Kingdom',
-          optionC: 'Ireland',
-          optionD: 'USSR',
-          correctOption: 'A',
-          explanation: 'Fundamental Rights in Part III of the Indian Constitution are inspired by the Bill of Rights in the US Constitution.',
-          difficulty: 'Easy',
-          marks: 2,
-          negativeMarks: 0.5,
-          status: 'published'
-        },
-        {
-          id: 'q-math-1',
-          examId: 'exam-ssc',
-          subject: 'Quantitative Aptitude',
-          topic: 'Number Systems',
-          questionText: 'What is the remainder of 2^99 divided by 33?',
-          optionA: '17',
-          optionB: '16',
-          optionC: '1',
-          optionD: '32',
-          correctOption: 'A',
-          explanation: 'By writing 2^99 as (2^5)^19 * 2^4 = 32^19 * 16. Dividing by 33 yields remainder (-1)^19 * 16 = -16 = 17.',
-          difficulty: 'Medium',
-          marks: 2,
-          negativeMarks: 0.5,
-          status: 'published'
-        },
-        {
-          id: 'q-math-2',
-          examId: 'exam-ssc',
-          subject: 'Quantitative Aptitude',
-          topic: 'Simple Interest',
-          questionText: 'If a sum of money doubles itself in 5 years at simple interest, in how many years will it become four times?',
-          optionA: '15 years',
-          optionB: '10 years',
-          optionC: '20 years',
-          optionD: '12 years',
-          correctOption: 'A',
-          explanation: 'Doubles in 5 years means Simple Interest is equal to principal. For 4 times, Simple Interest must be 3 times principal, taking 15 years.',
-          difficulty: 'Medium',
-          marks: 2,
-          negativeMarks: 0.5,
-          status: 'published'
-        }
-      ];
-      localStorage.setItem('questions_db', JSON.stringify(defaultQuestions));
-      savedQs = JSON.stringify(defaultQuestions);
-    }
-    const allQuestions: Question[] = JSON.parse(savedQs);
-
-    setTimeout(() => {
-      if (item) {
-        setTest(item);
-        setSecondsLeft(item.durationMinutes * 60);
-
-        // Filter questions related to this test's subject or custom mapping
-        let testQs = allQuestions.filter(
-          (q) => q.subject.toLowerCase() === item.subject.toLowerCase()
-        );
-        if (testQs.length === 0) {
-          testQs = allQuestions; // fallback
-        }
-        setQuestions(testQs);
-
-        // Initialize palette states
-        const initialStates: Record<string, string> = {};
-        testQs.forEach((q, idx) => {
-          initialStates[q.id] = idx === 0 ? 'visited' : 'unvisited';
-        });
-        setPaletteStates(initialStates);
+    const checkAccessAndLoad = async () => {
+      // 1. Sync Mock Tests and retrieve matching test profile
+      let savedTests = localStorage.getItem('mock_tests_db');
+      if (!savedTests) {
+        localStorage.setItem('mock_tests_db', JSON.stringify(mockMockTests));
+        savedTests = JSON.stringify(mockMockTests);
       }
+      const tests: MockTest[] = JSON.parse(savedTests);
+      const item = tests.find((t) => t.slug === testSlug || t.id === testSlug);
+
+      if (!item) {
+        setLoading(false);
+        return;
+      }
+
+      if (isConfigured) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          router.push(`/login?message=Please%20login%20to%20continue.&redirect=${encodeURIComponent(window.location.pathname)}`);
+          return;
+        }
+
+        if (!item.isFree) {
+          // Verify individual test purchase
+          const { data: access } = await supabase
+            .from('user_content_access')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .eq('content_type', 'mock_test')
+            .eq('content_id', item.id)
+            .maybeSingle();
+
+          if (!access) {
+            // Verify active subscription pass
+            const { data: sub } = await supabase
+              .from('student_subscriptions')
+              .select('*')
+              .eq('user_id', session.user.id)
+              .eq('status', 'active')
+              .gt('ends_at', new Date().toISOString())
+              .maybeSingle();
+
+            if (!sub) {
+              alert('Unlock required: This is a premium mock test. Please buy a subscription pass or purchase access to attempt it.');
+              router.push(`/mock-tests/${testSlug}`);
+              return;
+            }
+          }
+        }
+      } else {
+        const role = localStorage.getItem('simulated_role') || 'guest';
+        if (role === 'guest') {
+          router.push(`/login?message=Please%20login%20to%20continue.&redirect=${encodeURIComponent(window.location.pathname)}`);
+          return;
+        }
+
+        if (!item.isFree) {
+          const accessSaved = localStorage.getItem('user_content_access_db') || '[]';
+          const accessList = JSON.parse(accessSaved);
+          const ownsItem = accessList.some(
+            (a: any) => a.username === 'siddharth_99' && a.contentType === 'mock_test' && a.contentId === item.id
+          );
+
+          // Check simulated subscription
+          const savedSub = localStorage.getItem('simulated_subscription');
+          let hasActiveSub = false;
+          if (savedSub) {
+            const sub = JSON.parse(savedSub);
+            hasActiveSub = sub.status === 'active' && new Date(sub.ends_at) > new Date();
+          }
+
+          if (!ownsItem && !hasActiveSub) {
+            alert('Unlock required: This is a premium mock test. Please buy a subscription pass or purchase access to attempt it.');
+            router.push(`/mock-tests/${testSlug}`);
+            return;
+          }
+        }
+      }
+
+      // 2. Sync Questions DB or seed defaults
+      let savedQs = localStorage.getItem('questions_db');
+      if (!savedQs) {
+        const defaultQuestions: Question[] = [
+          {
+            id: 'q-pol-1',
+            examId: 'exam-upsc',
+            subject: 'Indian Polity',
+            topic: 'Constitutional Framing',
+            questionText: 'Who was the chairman of the Drafting Committee of the Indian Constitution?',
+            optionA: 'Dr. B.R. Ambedkar',
+            optionB: 'Dr. Rajendra Prasad',
+            optionC: 'Jawaharlal Nehru',
+            optionD: 'Sardar Vallabhbhai Patel',
+            correctOption: 'A',
+            explanation: 'Dr. B.R. Ambedkar was appointed the chairman of the Drafting Committee on August 29, 1947.',
+            difficulty: 'Easy',
+            marks: 2,
+            negativeMarks: 0.5,
+            status: 'published'
+          },
+          {
+            id: 'q-pol-2',
+            examId: 'exam-upsc',
+            subject: 'Indian Polity',
+            topic: 'Emergency Provisions',
+            questionText: 'Under which Article of the Constitution can the President declare a National Emergency?',
+            optionA: 'Article 352',
+            optionB: 'Article 356',
+            optionC: 'Article 360',
+            optionD: 'Article 368',
+            correctOption: 'A',
+            explanation: 'Article 352 states that the President can declare a National Emergency due to war, external aggression, or armed rebellion.',
+            difficulty: 'Easy',
+            marks: 2,
+            negativeMarks: 0.5,
+            status: 'published'
+          },
+          {
+            id: 'q-pol-3',
+            examId: 'exam-upsc',
+            subject: 'Indian Polity',
+            topic: 'Fundamental Rights',
+            questionText: 'The concept of "Fundamental Rights" in the Indian Constitution is borrowed from which nation?',
+            optionA: 'United States of America',
+            optionB: 'United Kingdom',
+            optionC: 'Ireland',
+            optionD: 'USSR',
+            correctOption: 'A',
+            explanation: 'Fundamental Rights in Part III of the Indian Constitution are inspired by the Bill of Rights in the US Constitution.',
+            difficulty: 'Easy',
+            marks: 2,
+            negativeMarks: 0.5,
+            status: 'published'
+          },
+          {
+            id: 'q-math-1',
+            examId: 'exam-ssc',
+            subject: 'Quantitative Aptitude',
+            topic: 'Number Systems',
+            questionText: 'What is the remainder of 2^99 divided by 33?',
+            optionA: '17',
+            optionB: '16',
+            optionC: '1',
+            optionD: '32',
+            correctOption: 'A',
+            explanation: 'By writing 2^99 as (2^5)^19 * 2^4 = 32^19 * 16. Dividing by 33 yields remainder (-1)^19 * 16 = -16 = 17.',
+            difficulty: 'Medium',
+            marks: 2,
+            negativeMarks: 0.5,
+            status: 'published'
+          },
+          {
+            id: 'q-math-2',
+            examId: 'exam-ssc',
+            subject: 'Quantitative Aptitude',
+            topic: 'Simple Interest',
+            questionText: 'If a sum of money doubles itself in 5 years at simple interest, in how many years will it become four times?',
+            optionA: '15 years',
+            optionB: '10 years',
+            optionC: '20 years',
+            optionD: '12 years',
+            correctOption: 'A',
+            explanation: 'Doubles in 5 years means Simple Interest is equal to principal. For 4 times, Simple Interest must be 3 times principal, taking 15 years.',
+            difficulty: 'Medium',
+            marks: 2,
+            negativeMarks: 0.5,
+            status: 'published'
+          }
+        ];
+        localStorage.setItem('questions_db', JSON.stringify(defaultQuestions));
+        savedQs = JSON.stringify(defaultQuestions);
+      }
+      const allQuestions: Question[] = JSON.parse(savedQs);
+
+      setTest(item);
+      setSecondsLeft(item.durationMinutes * 60);
+
+      // Filter questions related to this test's subject or custom mapping
+      let testQs = allQuestions.filter(
+        (q) => q.subject.toLowerCase() === item.subject.toLowerCase()
+      );
+      if (testQs.length === 0) {
+        testQs = allQuestions; // fallback
+      }
+      setQuestions(testQs);
+
+      // Initialize palette states
+      const initialStates: Record<string, string> = {};
+      testQs.forEach((q, idx) => {
+        initialStates[q.id] = idx === 0 ? 'visited' : 'unvisited';
+      });
+      setPaletteStates(initialStates);
       setLoading(false);
-    }, 0);
-  }, [testSlug]);
+    };
+
+    checkAccessAndLoad();
+  }, [testSlug, router]);
 
   // Timer Countdown loop
   useEffect(() => {

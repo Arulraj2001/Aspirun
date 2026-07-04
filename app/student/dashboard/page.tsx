@@ -19,8 +19,10 @@ import {
   ArrowRight,
   AlertCircle,
   Award,
-  MessageSquare
+  MessageSquare,
+  Sparkles
 } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
 
 export default function StudentDashboard() {
   const [activePlan, setActivePlan] = useState<StudyPlan | null>(null);
@@ -33,8 +35,12 @@ export default function StudentDashboard() {
   const [recTests, setRecTests] = useState<MockTest[]>([]);
   const [recentResults, setRecentResults] = useState<MockResult[]>([]);
   const [followedThreads, setFollowedThreads] = useState<CommunityPost[]>([]);
+  const [activeSubscription, setActiveSubscription] = useState<{ name: string; ends_at: string } | null>(null);
 
   useEffect(() => {
+    const isConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                         !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project-id');
+
     // 1. Load active study plan
     const planId = localStorage.getItem('active_plan_id') || 'plan-upsc-polity-30';
     const plan = mockPlans.find((p) => p.id === planId);
@@ -126,6 +132,45 @@ export default function StudentDashboard() {
       const streakSaved = localStorage.getItem('study_streak_count') || '5';
       setStreak(parseInt(streakSaved));
     }, 0);
+
+    const checkSubscription = async () => {
+      if (isConfigured) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            const { data: sub } = await supabase
+              .from('student_subscriptions')
+              .select('*, subscription_plans(name)')
+              .eq('user_id', session.user.id)
+              .eq('status', 'active')
+              .gt('ends_at', new Date().toISOString())
+              .maybeSingle();
+
+            if (sub) {
+              const planName = (sub.subscription_plans as any)?.name || 'Pro Pass';
+              setActiveSubscription({
+                name: planName,
+                ends_at: sub.ends_at
+              });
+            }
+          }
+        } catch (err) {
+          console.error("Failed to load student active subscription:", err);
+        }
+      } else {
+        const savedSub = localStorage.getItem('simulated_subscription');
+        if (savedSub) {
+          const sub = JSON.parse(savedSub);
+          if (sub.status === 'active' && new Date(sub.ends_at) > new Date()) {
+            setActiveSubscription({
+              name: sub.name,
+              ends_at: sub.ends_at
+            });
+          }
+        }
+      }
+    };
+    checkSubscription();
   }, []);
 
   const progressPercent = tasksCount.total > 0 ? (tasksCount.completed / tasksCount.total) * 100 : 0;
@@ -138,9 +183,22 @@ export default function StudentDashboard() {
           <Trophy className="h-64 w-64 text-white" />
         </div>
         <div className="relative z-10 max-w-xl space-y-3">
-          <span className="bg-brand-500/35 border border-brand-400 text-brand-200 text-xs font-black px-2.5 py-1 rounded-full uppercase tracking-wider">
-            Student Dashboard
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="bg-brand-500/35 border border-brand-400 text-brand-200 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+              Student Dashboard
+            </span>
+            {activeSubscription ? (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-brand-500 text-white text-[9px] font-black uppercase tracking-wider rounded-full shadow-inner animate-pulse">
+                <Sparkles className="h-3 w-3 text-brand-200" /> Active: {activeSubscription.name} ({Math.max(0, Math.ceil((new Date(activeSubscription.ends_at).getTime() - new Date().getTime()) / (1000 * 3600 * 24)))} Days Left)
+              </span>
+            ) : (
+              <Link href="/pricing">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-surface-850 hover:bg-surface-750 text-brand-300 text-[9px] font-black uppercase tracking-wider rounded-full transition-colors border border-surface-700">
+                  Upgrade to Pro Pass <ChevronRight className="h-3 w-3" />
+                </span>
+              </Link>
+            )}
+          </div>
           <h1 className="text-2xl md:text-4xl font-black tracking-tight leading-tight pt-1">
             Welcome back, Siddharth!
           </h1>

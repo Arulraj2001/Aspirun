@@ -94,3 +94,13 @@ values
   ('623e4567-e89b-12d3-a456-426614174007', '433a7ad1-77ad-4560-bf88-a739b8bc7e6a', 'GK & Current Affairs', 'gk-ca', 'Discuss daily national events, economy, and general science updates.', 'No political debates or cut-off speculations.', 'active'),
   ('623e4567-e89b-12d3-a456-426614174008', null, 'Preparation Strategy', 'strategy', 'Ask guidance regarding daily target completions, book lists, and revision schedules.', 'Keep strategy guides honest and serious.', 'active')
 on conflict (id) do nothing;
+
+-- ==========================================
+-- 6. SUBSCRIPTION PLANS SEEDING
+-- ==========================================
+insert into public.subscription_plans (id, name, duration_months, price, description, status)
+values
+  ('111e4567-e89b-12d3-a456-426614174001', 'Monthly Pass', 1, 199.00, 'Complete access to all premium mocks, plan roadmaps, and PDF study files for 1 month.', 'active'),
+  ('222e4567-e89b-12d3-a456-426614174002', '6 Months Pass (Semester)', 6, 599.00, 'Complete access to all premium mocks, plan roadmaps, and PDF study files for 6 months.', 'active'),
+  ('333e4567-e89b-12d3-a456-426614174003', 'Annual Pass (Yearly)', 12, 999.00, 'Complete access to all premium mocks, plan roadmaps, and PDF study files for 12 months.', 'active')
+on conflict (id) do nothing;

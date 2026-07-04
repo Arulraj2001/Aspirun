@@ -9,7 +9,7 @@ import { ShieldAlert, Check, Copy, HelpCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 
 interface PaymentModalProps {
-  contentType: 'study_plan' | 'material' | 'mock_test';
+  contentType: 'study_plan' | 'material' | 'mock_test' | 'subscription';
   contentId: string;
   contentTitle: string;
   amount: number;

@@ -12,7 +12,7 @@ interface PaymentRequest {
   id: string;
   user: string;
   username: string;
-  contentType: 'study_plan' | 'material' | 'mock_test';
+  contentType: 'study_plan' | 'material' | 'mock_test' | 'subscription';
   contentId: string;
   contentTitle: string;
   amount: number;
