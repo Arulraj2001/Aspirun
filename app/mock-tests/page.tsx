@@ -94,15 +94,6 @@ export default function MockTestsPage() {
       <SectionHeader
         title="Mock Tests & Sectional Quizzes"
         subtitle="Practice high-quality mock questions patterned after latest paper designs to enhance your speed and accuracy."
-        action={
-          <div className="flex gap-2">
-            <Link href="/admin/mock-tests">
-              <Button size="sm" variant="outline">
-                Admin Panel
-              </Button>
-            </Link>
-          </div>
-        }
       />
 
       {/* Toolbar filters grid */}
