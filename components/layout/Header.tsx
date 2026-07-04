@@ -33,6 +33,34 @@ export const Header: React.FC = () => {
     const isConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL && 
                          !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project-id');
 
+    const checkUserIsolation = (currentUserId: string) => {
+      const savedUser = localStorage.getItem('last_active_user_id');
+      if (savedUser && savedUser !== currentUserId) {
+        // Different user detected! Clear non-static storage cache
+        const keysToKeep = [
+          'questions_db',
+          'mock_tests_db',
+          'materials_db',
+          'community_safety_settings',
+          'subscription_plans_db'
+        ];
+        
+        const temp: Record<string, string> = {};
+        keysToKeep.forEach(k => {
+          const val = localStorage.getItem(k);
+          if (val) temp[k] = val;
+        });
+
+        localStorage.clear();
+
+        // Restore static tables
+        Object.entries(temp).forEach(([k, val]) => {
+          localStorage.setItem(k, val);
+        });
+      }
+      localStorage.setItem('last_active_user_id', currentUserId);
+    };
+
     const syncRole = () => {
       const savedRole = localStorage.getItem('simulated_role') as 'guest' | 'student' | 'admin';
       if (savedRole) {
@@ -42,6 +70,20 @@ export const Header: React.FC = () => {
           }
           return prev;
         });
+      }
+
+      if (!isConfigured) {
+        const savedProfile = localStorage.getItem('simulated_profile');
+        if (savedProfile) {
+          try {
+            const parsed = JSON.parse(savedProfile);
+            if (parsed?.username) {
+              checkUserIsolation(parsed.username);
+            }
+          } catch {}
+        } else {
+          checkUserIsolation('guest');
+        }
       }
     };
     syncRole();
@@ -53,20 +95,7 @@ export const Header: React.FC = () => {
       const syncSession = async () => {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', session.user.id)
-            .single();
-          const dbRole = (profile?.role || 'student') as 'student' | 'admin';
-          localStorage.setItem('simulated_role', dbRole);
-          setRole(dbRole);
-        }
-      };
-      syncSession();
-
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (session?.user) {
+          checkUserIsolation(session.user.id);
           const { data: profile } = await supabase
             .from('profiles')
             .select('role')
@@ -76,6 +105,24 @@ export const Header: React.FC = () => {
           localStorage.setItem('simulated_role', dbRole);
           setRole(dbRole);
         } else {
+          checkUserIsolation('guest');
+        }
+      };
+      syncSession();
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (session?.user) {
+          checkUserIsolation(session.user.id);
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .single();
+          const dbRole = (profile?.role || 'student') as 'student' | 'admin';
+          localStorage.setItem('simulated_role', dbRole);
+          setRole(dbRole);
+        } else {
+          checkUserIsolation('guest');
           // No active session: fallback to guest unless manually simulating student/admin
           const savedRole = localStorage.getItem('simulated_role') as 'guest' | 'student' | 'admin';
           if (savedRole !== 'student' && savedRole !== 'admin') {
